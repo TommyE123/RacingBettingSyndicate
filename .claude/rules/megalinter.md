@@ -27,7 +27,7 @@ Do not manipulate the validation configuration to hide genuine PR-related proble
 - Weakening MegaLinter configuration (changing rules, thresholds, or severity levels)
 - Removing legitimate code solely to avoid a lint finding
 - Weakening or removing tests to improve coverage or reduce findings
-- Altering coverage thresholds to pass coverage checks
+- Altering coverage thresholds to pass codecov checks
 - Using other CI bypass techniques
 
 The existing `.mega-linter.yml` baseline and its handling of pre-existing findings must be preserved, unless the task explicitly asks for a configuration change.

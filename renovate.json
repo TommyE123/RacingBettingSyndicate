@@ -1,0 +1,72 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    "customManagers:dockerfileVersions",
+    "group:vitestMonorepo"
+  ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    ".github/workflows/issue-triage.lock.yml",
+    "**/.mise/locks/**"
+  ],
+  "description": "Dependency-update policy for RacingBettingSyndicate. Renovate creates and maintains dependency PRs. Patch updates are automerged once required checks pass; all other updates require manual review and merge.",
+  "internalChecksFilter": "strict",
+  "forkProcessing": "enabled",
+  "platformAutomerge": false,
+  "rebaseWhen": "behind-base-branch",
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "prConcurrentLimit": 15,
+  "prHourlyLimit": 5,
+  "packageRules": [
+    {
+      "description": "Keep automerge disabled by default for all dependency updates. A later, narrower rule enables it only for eligible patch updates.",
+      "matchPackageNames": ["*"],
+      "automerge": false,
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Automerge patch updates once all required CI checks pass, including 0.x dependencies. Minor and major updates keep automerge disabled. Relies on GitHub required status checks.",
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+    {
+      "description": "Label Renovate patch updates.",
+      "matchUpdateTypes": ["patch"],
+      "addLabels": ["renovate:patch"]
+    },
+    {
+      "description": "Label Renovate minor updates.",
+      "matchUpdateTypes": ["minor"],
+      "addLabels": ["renovate:minor"]
+    },
+    {
+      "description": "Label Renovate major updates.",
+      "matchUpdateTypes": ["major"],
+      "addLabels": ["renovate:major"]
+    },
+    {
+      "description": "Label Renovate digest updates.",
+      "matchUpdateTypes": ["digest", "pin"],
+      "addLabels": ["renovate:digest"]
+    },
+    {
+      "description": "Pin Docker image tags to an immutable SHA256 digest as well as their human-readable tag/version where the registry supports digests.",
+      "matchDatasources": ["docker"],
+      "pinDigests": true
+    },
+    {
+      "description": "tommye123/racingbettingsyndicate-* are this project's own published images, not third-party dependencies. Renovate should not manage them.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "tommye123/racingbettingsyndicate-backend",
+        "tommye123/racingbettingsyndicate-frontend"
+      ],
+      "enabled": false,
+      "minimumReleaseAge": null
+    }
+  ]
+}

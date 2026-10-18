@@ -1,0 +1,30 @@
+ls:
+  .py: snake_case
+  .js: camelCase | lowercase
+  .jsx: PascalCase | lowercase
+  .ts: camelCase | lowercase
+  .tsx: PascalCase | lowercase | kebab-case
+  .json: lowercase
+  .jsonc: lowercase
+  .yml: kebab-case
+  .yaml: kebab-case
+
+  app:
+    .dir: snake_case
+
+  docs:
+    .dir: kebab-case
+    .md: kebab-case
+
+# Next.js App Router reserves file and folder names such as page.tsx, layout.tsx,
+# [id] and (group); add a frontend block here when the frontend layout is created.
+
+ignore:
+  - .git
+  - node_modules
+  - frontend/node_modules
+  - frontend/.next
+  - .devcontainer/node_modules
+  - coverage
+  - htmlcov
+  - megalinter-reports

@@ -89,6 +89,12 @@ Findings in this area may have significant user impact, so ensure they are suppo
 
 ---
 
+## Container and Deployment Behaviour
+
+The backend and frontend ship as Docker images run by Compose. Pay particular attention to health checks (`/health`), running as a non-root user, image pinning, port and volume changes, and anything that persists data under `/data`.
+
+---
+
 ## Logging, Notifications and Observability
 
 Pay attention to changes affecting:

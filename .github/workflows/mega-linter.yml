@@ -15,13 +15,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Skips MegaLinter for the automated mutation badge PR (badge file only). If this job
+  # itself fails, badge-only is empty and it runs. See badge-only-check.yml.
+  changes:
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/badge-only-check.yml
+
   megalinter:
     name: MegaLinter
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.badge-only != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
-    # MegaLinter only needs to check out the code, report status and publish
-    # its own report artifact; it never commits, pushes, or opens a PR.
+    # Read-only: MegaLinter only needs to check out the code and publish its
+    # own report artifact, never to commit, push, or open a PR.
     permissions:
       contents: read
       issues: write
@@ -29,6 +39,37 @@ jobs:
       statuses: write
 
     steps:
+      # Free runner disk space for MegaLinter. Security scanners such as Trivy
+      # download large a vulnerability database during the run.
+      # Fail if GitHub changes the runner layout so this does not silently regress.
+      - name: Free Disk Space & Verify
+        run: |
+          echo "=== Initial Free Disk Space ==="
+          df -h /
+
+          # Ordered from lowest file count (fastest delete) to highest
+          TARGETS=(
+            "/usr/local/share/chromium"   # 480 files (~650 MB)
+            "/usr/local/share/powershell" # 551 files (~1.3 GB)
+            "/opt/microsoft"              # 952 files (~813 MB)
+            "/usr/share/swift"            # 2,025 files (~3.3 GB)
+          )
+
+          echo ""
+          echo "=== Validating & Removing Unused Directories ==="
+          for dir in "${TARGETS[@]}"; do
+            if [ ! -d "$dir" ]; then
+              echo "::error::Runner cleanup directory missing: $dir (runner layout may have changed)"
+              exit 1
+            fi
+            echo "Removing $dir..."
+            sudo rm -rf "$dir"
+          done
+
+          echo ""
+          echo "=== Post-Cleanup Free Disk Space ==="
+          df -h /
+
       # Git Checkout (Shallow clone to avoid tag bloat)
       - name: Checkout Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -41,7 +82,8 @@ jobs:
         # More info at https://megalinter.io/latest/flavors/
         uses: oxsecurity/megalinter/flavors/cupcake@9949bad031045f366be2467e00e8371a7328a2e2 # v10.1.0
         env:
-          # Linting behaviour lives in .mega-linter.yml so it's a single place to toggle.
+          # Linting behavior (VALIDATE_ALL_CODEBASE, DISABLE_ERRORS_LINTERS, etc.)
+          # lives in .mega-linter.yml so it's a single place to toggle.
           # https://megalinter.io/latest/configuration/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

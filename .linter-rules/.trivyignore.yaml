@@ -1,0 +1,6 @@
+# Document every ignore with a statement and, where possible, an expiry date.
+misconfigurations:
+  - id: DS-0026
+    paths:
+      - .devcontainer/Dockerfile
+    statement: "Devcontainer health check is not required for this development-only image"

@@ -1,0 +1,98 @@
+# Source of truth for the GitHub *label definitions* (name/color/description)
+# in the issue-classification taxonomy used by Gemini-powered issue triage
+# (see .github/workflows/issue-triage.md, a GitHub Agentic Workflow). The
+# same list also constrains the `add-labels` safe-output allow-list in that
+# workflow's frontmatter - both must be kept in sync by hand when the
+# taxonomy changes.
+#
+# Ownership model:
+#   kind:*   - owned by Gemini triage (what kind of issue this is)
+#   area:*   - owned by Gemini triage (which part of the codebase it touches)
+#   status:* - owned by the triage workflow (where the issue is in the triage
+#              lifecycle)
+#   everything else (priority, assignment, milestones, release:* PR labels,
+#   etc.) - owned by humans / other existing processes, and is out of scope
+#   for this file.
+#
+# Synced to GitHub with EndBug/label-sync (see
+# .github/workflows/labels-sync.yml), which only creates/updates the labels
+# listed below by exact name. Deliberately no `aliases` here: a label is a
+# single repository-wide object, so renaming one via label-sync (or deleting
+# one via the repo-wide "delete a label" endpoint) would affect every issue
+# *and every pull request* that happens to carry it - not just the issues
+# this taxonomy is about. Moving existing issues onto this taxonomy is
+# done manually.
+
+# --- kind:* --------------------------------------------------------------
+
+- name: kind:bug
+  color: "d73a4a"
+  description: Unexpected behaviour, failures or incorrect results.
+
+- name: kind:enhancement
+  color: "1a7f37"
+  description: New functionality, improvements or behaviour changes.
+
+- name: kind:documentation
+  color: "0075ca"
+  description: Documentation, README, examples or guides.
+
+- name: kind:chore
+  color: "6e7781"
+  description: Maintenance, refactoring, dependency updates, test coverage.
+
+# --- area:* ----------------------------------------------------------------
+
+- name: area:api
+  color: "0a3069"
+  description: REST API routes, request/response handling, FastAPI backend.
+
+- name: area:frontend
+  color: "bf3989"
+  description: Next.js web UI, components, styling, client-side behaviour.
+
+- name: area:betting
+  color: "8250df"
+  description: Tournament bets, stakes, odds and payout calculations.
+
+- name: area:leagues
+  color: "0969da"
+  description: League and tournament management, membership and standings.
+
+- name: area:results
+  color: "0e8a16"
+  description: Results ingestion and automation, scoring from race results.
+
+- name: area:auth
+  color: "d4c5f9"
+  description: Authentication, authorisation, accounts and data access.
+
+- name: area:docker
+  color: "1d76db"
+  description: Docker images, Compose and container deployment.
+
+- name: area:config
+  color: "bf8700"
+  description: Configuration, environment variables, config parsing.
+
+- name: area:logging
+  color: "57606a"
+  description: Logging, diagnostics, verbosity, log output.
+
+- name: area:github-actions
+  color: "5319e7"
+  description: CI/CD, GitHub Actions, releases, repository automation.
+
+- name: area:tests
+  color: "0e7490"
+  description: Unit tests, integration tests, test coverage.
+
+# --- status:* --------------------------------------------------------------
+
+- name: status:needs-triage
+  color: "e16f24"
+  description: Awaiting kind/area classification.
+
+- name: status:needs-information
+  color: "bf8700"
+  description: Awaiting more information from the reporter.

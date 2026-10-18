@@ -1,0 +1,433 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "RBS: Run Backend",
+      "type": "shell",
+      "command": "python -m app.main",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Frontend",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Python Unit Tests",
+      "type": "shell",
+      "command": "python -m pytest",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Python Integration Tests",
+      "type": "shell",
+      "command": "python -m pytest app/tests/integration",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Mutation Testing",
+      "type": "shell",
+      "command": "./mutation.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Frontend Tests",
+      "type": "shell",
+      "command": "npm test",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Build Frontend",
+      "type": "shell",
+      "command": "npm run build",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Python",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "RBS: Check Python with Ruff",
+        "RBS: Check Python Formatting",
+        "RBS: Type Check Python"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Python with Ruff",
+      "type": "shell",
+      "command": "ruff check --config .linter-rules/.ruff.toml --output-format concise app",
+      "problemMatcher": {
+        "owner": "ruff",
+        "source": "ruff",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": {
+          "regexp": "^(.+?):(\\d+):(\\d+):\\s+(\\S+)\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "code": 4,
+          "message": 5
+        }
+      }
+    },
+    {
+      "label": "RBS: Check Python Formatting",
+      "type": "shell",
+      "command": "ruff format --config .linter-rules/.ruff.toml --check app",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Type Check Python",
+      "type": "shell",
+      "command": "pyright",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Frontend",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "RBS: Check JavaScript",
+        "RBS: Check JavaScript Formatting",
+        "RBS: Check CSS"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check JavaScript",
+      "type": "shell",
+      "command": "npm run lint",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": "$eslint-stylish"
+    },
+    {
+      "label": "RBS: Check JavaScript Formatting",
+      "type": "shell",
+      "command": "npm run format:check",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check CSS",
+      "type": "shell",
+      "command": "stylelint --config .linter-rules/.stylelintrc.json --config-basedir .devcontainer/node_modules \"frontend/src/**/*.css\"",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Shell Scripts",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "RBS: Check Shell Scripts with ShellCheck",
+        "RBS: Check Shell Formatting"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Shell Scripts with ShellCheck",
+      "type": "shell",
+      "command": "shellcheck $(git ls-files '*.sh')",
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Shell Formatting",
+      "type": "shell",
+      "command": "shfmt --diff $(git ls-files '*.sh')",
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Workflows",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "RBS: Check GitHub Actions",
+        "RBS: Check Workflow Security"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check GitHub Actions",
+      "type": "shell",
+      "command": "actionlint",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Workflow Security",
+      "type": "shell",
+      "command": "zizmor $(git ls-files '.github/workflows/*.yml' | grep -v '\\.lock\\.yml$')",
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Markup and Data",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "RBS: Check Markdown",
+        "RBS: Check Markdown Tables",
+        "RBS: Check YAML",
+        "RBS: Check JSON",
+        "RBS: Check JSON and YAML Formatting",
+        "RBS: Validate JSON and YAML"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Markdown",
+      "type": "shell",
+      "command": "markdownlint-cli2 --config .linter-rules/.markdownlint.jsonc $(git ls-files '*.md')",
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Markdown Tables",
+      "type": "shell",
+      "command": "markdown-table-formatter --check $(git ls-files '*.md')",
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check YAML",
+      "type": "shell",
+      "command": "yamllint --strict -c .linter-rules/.yamllint.yml .",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check JSON",
+      "type": "shell",
+      "command": "for file in $(git ls-files '*.json' | grep -v -e 'package-lock\\.json$' -e '^\\.vscode/'); do jsonlint --quiet \"$file\" || exit 1; done",
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check JSON and YAML Formatting",
+      "type": "shell",
+      "command": "prettier --check \"**/*.json\" \"**/*.{yml,yaml}\" \"!**/*.lock.yml\" --ignore-path .gitignore",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Validate JSON and YAML",
+      "type": "shell",
+      "command": "v8r $(git ls-files '*.json' '*.yml' '*.yaml' | grep -v -e 'package-lock\\.json$' -e '\\.lock\\.yml$' -e '^\\.vscode/')",
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Dockerfiles",
+      "type": "shell",
+      "command": "hadolint Dockerfile frontend/Dockerfile .devcontainer/Dockerfile",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Repository Conventions",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "RBS: Check EditorConfig",
+        "RBS: Check Paths",
+        "RBS: Check Secrets"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check EditorConfig",
+      "type": "shell",
+      "command": "ec",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Paths",
+      "type": "shell",
+      "command": "ls-lint --config .linter-rules/.ls-lint.yml",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Check Secrets",
+      "type": "shell",
+      "command": "secretlint --secretlintrc .linter-rules/.secretlintrc.json \"**/*\"",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Semgrep",
+      "type": "shell",
+      "command": "mkdir -p .lint && semgrep scan --error --config p/command-injection --config p/docker-compose --config p/insecure-transport --config p/javascript --config p/owasp-top-ten --config p/python --config p/react --config p/typescript --exclude 'Dockerfile*' --exclude .lint --json-output .lint/semgrep.json .",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run OSV Scanner",
+      "type": "shell",
+      "command": "mkdir -p .lint && osv-scanner scan source -r . --format json --output-file .lint/osv.json",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Trivy",
+      "type": "shell",
+      "command": "trivy fs --config .linter-rules/.trivy.yaml --scanners vuln,misconfig,secret --skip-dirs '.lint' .",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run TruffleHog",
+      "type": "shell",
+      "command": "mkdir -p .lint && set -o pipefail && trufflehog filesystem . --no-update --fail --results=verified --exclude-paths=.linter-rules/.trufflehog-exclude.txt --json | tee .lint/trufflehog.jsonl",
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Betterleaks",
+      "type": "shell",
+      "command": "mkdir -p .lint && betterleaks --redact --verbose dir . --report-path .lint/betterleaks.json --report-format json",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Security Scanners",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "RBS: Run Semgrep",
+        "RBS: Run OSV Scanner",
+        "RBS: Run Trivy",
+        "RBS: Run TruffleHog",
+        "RBS: Run Betterleaks"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Local Checks",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "RBS: Check Python",
+        "RBS: Check Frontend",
+        "RBS: Check Shell Scripts",
+        "RBS: Check Workflows",
+        "RBS: Check Markup and Data",
+        "RBS: Check Dockerfiles",
+        "RBS: Check Repository Conventions",
+        "RBS: Run Security Scanners"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Megalinter Cupcake",
+      "type": "shell",
+      "command": "docker run --rm --user \"$(id -u):$(id -g)\" -e \"HOME=/tmp\" -e \"CONSOLE_REPORTER=true\" -e \"CONSOLE_REPORTER_SECTIONS=true\" -e \"OUTPUT_DETAIL=detailed\" -e \"REPORT_OUTPUT_FOLDER=/tmp/lint/.lint/megalinter\" -e \"CLEAR_REPORT_FOLDER=true\" -v \"$(pwd):/tmp/lint\" ghcr.io/oxsecurity/megalinter-cupcake:v10.1.0@sha256:7cce5b9d46564149d451a9752c5c266982f10c231be7df79996f46e3e171d2fc",
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Megalinter Cupcake Beta",
+      "type": "shell",
+      "command": "docker run --rm --user \"$(id -u):$(id -g)\" -e \"HOME=/tmp\" -e \"CONSOLE_REPORTER=true\" -e \"CONSOLE_REPORTER_SECTIONS=true\" -e \"OUTPUT_DETAIL=detailed\" -e \"REPORT_OUTPUT_FOLDER=/tmp/lint/.lint/megalinter\" -e \"CLEAR_REPORT_FOLDER=true\" -v \"$(pwd):/tmp/lint\" ghcr.io/oxsecurity/megalinter-cupcake:beta",
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Run Docker Stack",
+      "type": "shell",
+      "command": "docker compose up --build",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Stop Docker Stack",
+      "type": "shell",
+      "command": "docker compose down",
+      "problemMatcher": []
+    },
+    {
+      "label": "RBS: Install gh-aw",
+      "type": "shell",
+      "command": "version=$(grep -o '\"compiler_version\":\"[^\"]*\"' .github/workflows/issue-triage.lock.yml | head -1 | cut -d'\"' -f4); [ -n \"$version\" ] || { echo 'No compiler_version found in issue-triage.lock.yml' >&2; exit 1; }; gh extension remove gh-aw 2>/dev/null; gh extension install github/gh-aw --pin \"$version\"",
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": [
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": []
+    }
+  ]
+}
