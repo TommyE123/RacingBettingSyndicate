@@ -1,5 +1,10 @@
 # Document every ignore with a statement and, where possible, an expiry date.
 misconfigurations:
+  - id: DS-0002
+    paths:
+      - .devcontainer/Dockerfile
+    statement: "Development-only image; the Dev Container runs as the base image's non-root vscode user via remoteUser in devcontainer.json"
+
   - id: DS-0026
     paths:
       - .devcontainer/Dockerfile

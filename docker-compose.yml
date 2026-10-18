@@ -9,11 +9,17 @@ services:
     volumes:
       - ./data:/data # Persistent data storage
     ports:
-      - "8000:8000" # Backend API
+      - "8420:8420" # Backend API
     environment:
       - PYTHONUNBUFFERED=1
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8420/health', timeout=5)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -27,4 +33,4 @@ services:
     depends_on:
       - backend
     ports:
-      - "3000:3000" # Web UI
+      - "3420:3420" # Web UI

@@ -16,7 +16,7 @@ LABEL maintainer="Racing Betting Syndicate"
 LABEL description="Racing Betting Syndicate web UI"
 
 ENV NODE_ENV=production \
-    PORT=3000 \
+    PORT=3420 \
     HOSTNAME=0.0.0.0
 
 WORKDIR /app
@@ -25,12 +25,12 @@ COPY --from=builder --chown=node:node /frontend/.next/standalone ./
 COPY --from=builder --chown=node:node /frontend/.next/static ./.next/static
 # `public/` is optional in a Next.js app; add a COPY for it if the app has one.
 
-USER node
+USER 1000
 
-# 3000 - web UI
-EXPOSE 3000
+# 3420 - web UI
+EXPOSE 3420
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["node", "-e", "fetch('http://localhost:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+    CMD ["node", "-e", "fetch('http://localhost:3420/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
 
 CMD ["node", "server.js"]

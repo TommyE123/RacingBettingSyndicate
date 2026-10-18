@@ -31,13 +31,13 @@
 
   "waitFor": "postCreateCommand",
 
-  "forwardPorts": [3000, 8000],
+  "forwardPorts": [3420, 8420],
 
   "portsAttributes": {
-    "3000": {
+    "3420": {
       "label": "Frontend (Next.js)"
     },
-    "8000": {
+    "8420": {
       "label": "Backend API (FastAPI)"
     }
   },

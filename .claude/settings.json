@@ -17,13 +17,7 @@
       "Bash(git push * --force*)",
       "Bash(git push * --force-with-lease=*)"
     ],
-    "ask": [
-      "Bash(git reset --hard:*)"
-    ],
-    "allow": [
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)"
-    ]
+    "ask": ["Bash(git reset --hard:*)"],
+    "allow": ["Bash(git add:*)", "Bash(git commit:*)", "Bash(git push:*)"]
   }
 }

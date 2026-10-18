@@ -11,8 +11,8 @@ RacingBettingSyndicate is a racing tournament betting, league management and res
 - Integration tests in `app/tests/integration/` need a running service or external dependencies, and plain `pytest` does not collect them.
 - Mutation testing: `./mutation.sh` (informational only; see `pyproject.toml`).
 - Frontend, from `frontend/`: `npm run test`, `npm run lint`, and `npm run build`, as relevant. CI expects the frontend to define `test:coverage`, `lint` and `build` scripts; it skips the frontend checks until `frontend/package-lock.json` exists.
-- Containers: `docker compose up --build` runs both services.
-- The backend must serve `GET /health` on port 8000 (the Docker health check and smoke test depend on it); the frontend image expects `output: "standalone"` in the Next.js config.
+- Containers: `docker compose up --build` runs both services. Ports are deliberately unusual (backend 8420, frontend 3420; CI smoke tests use 8421 and 8422) so they never clash with other local projects such as docker-autoheal (3000, 3131-3133, 9090, 9091, 9323); keep them distinct.
+- The backend must serve `GET /health` on port 8420 (the Docker health check and smoke test depend on it); the frontend image expects `output: "standalone"` in the Next.js config.
 - Record any new or changed commands here in the change that introduces them.
 
 - Validation scope: follow `.claude/rules/testing.md`. CI is authoritative for repository-wide checks.

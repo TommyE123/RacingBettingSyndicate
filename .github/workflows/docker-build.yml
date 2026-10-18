@@ -179,7 +179,7 @@ jobs:
       - name: Start the arm64 image
         run: |
           docker run -d --name rbs-backend-arm64 --platform linux/arm64 \
-            -p 8001:8000 \
+            -p 8422:8420 \
             -e PYTHONUNBUFFERED=1 \
             rbs-backend-test:arm64
           echo "Architecture: $(docker inspect --format '{{.Architecture}}' rbs-backend-arm64)"
@@ -188,7 +188,7 @@ jobs:
       - name: Wait for the arm64 service to become healthy
         run: |
           for _ in $(seq 1 60); do
-            if curl -sf http://localhost:8001/health >/dev/null; then
+            if curl -sf http://localhost:8422/health >/dev/null; then
               echo "arm64 image is healthy"
               exit 0
             fi
