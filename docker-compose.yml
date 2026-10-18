@@ -1,0 +1,39 @@
+services:
+  backend:
+    # Our own published image (built and published by .github/workflows/release-please.yml),
+    # not a third-party dependency. `docker compose up --build` builds it from this checkout.
+    image: tommye123/racingbettingsyndicate-backend:latest
+    build: .
+    container_name: racingbettingsyndicate-backend
+    restart: unless-stopped
+    volumes:
+      - backend-data:/data # Persistent data storage (named volume: initialised with the image's /data owned by the backend user)
+    ports:
+      - "8420:8420" # Backend API
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8420/health', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    image: tommye123/racingbettingsyndicate-frontend:latest
+    build: ./frontend
+    container_name: racingbettingsyndicate-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3420:3420" # Web UI
+
+volumes:
+  backend-data:

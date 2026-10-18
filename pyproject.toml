@@ -1,0 +1,13 @@
+# Mutation-testing configuration only. Nothing else reads this file:
+# pytest.ini and .coveragerc keep owning test and coverage settings, and
+# .linter-rules/.ruff.toml owns Ruff.
+[tool.mutmut]
+# Required: mutmut's directory-name auto-detection fails for some repository names.
+source_paths = ["app"]
+
+# Without this mutmut also mutates the tests themselves.
+do_not_mutate = ["app/tests/*"]
+
+# Tests that read repository files (workflows, scripts) via parents[N] cannot run inside
+# mutants/. Add their paths here as `--ignore=...` entries if such tests are written.
+pytest_add_cli_args_test_selection = []
