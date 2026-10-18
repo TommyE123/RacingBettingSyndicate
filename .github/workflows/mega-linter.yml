@@ -1,0 +1,58 @@
+# MegaLinter GitHub Action configuration file
+# More info at https://megalinter.io
+name: MegaLinter
+
+# Trigger mega-linter on every PR to main.
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  megalinter:
+    name: MegaLinter
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # MegaLinter only needs to check out the code, report status and publish
+    # its own report artifact; it never commits, pushes, or opens a PR.
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      statuses: write
+
+    steps:
+      # Git Checkout (Shallow clone to avoid tag bloat)
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      # MegaLinter
+      - name: MegaLinter
+        # More info at https://megalinter.io/latest/flavors/
+        uses: oxsecurity/megalinter/flavors/cupcake@9949bad031045f366be2467e00e8371a7328a2e2 # v10.1.0
+        env:
+          # Linting behaviour lives in .mega-linter.yml so it's a single place to toggle.
+          # https://megalinter.io/latest/configuration/
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Upload MegaLinter artifacts
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: success() || failure()
+        with:
+          name: MegaLinter reports
+          include-hidden-files: "true"
+          path: |
+            megalinter-reports
+            mega-linter.log
+          if-no-files-found: ignore

@@ -1,0 +1,45 @@
+# Configuration file for MegaLinter
+# See all available variables at https://megalinter.io/latest/configuration/ and in linters documentation
+#
+# Bootstrap baseline: the application stack (frontend and backend) is not yet
+# committed, so language-specific linter settings are deliberately left at
+# MegaLinter defaults. Add per-language configuration alongside the code it
+# lints, and do not weaken it afterwards (see .claude/rules/megalinter.md).
+
+DISABLE:
+  - COPYPASTE
+  - SPELL
+
+DISABLE_LINTERS:
+  - REPOSITORY_GRYPE
+  - REPOSITORY_SYFT
+
+# ---------------------------------------------------------------------------
+# Global MegaLinter configuration
+# ---------------------------------------------------------------------------
+
+FLAVOR_SUGGESTIONS: false
+LINTER_RULES_PATH: .linter-rules
+FORMATTERS_DISABLE_ERRORS: false
+GITHUB_STATUS_REPORTER: true
+SHOW_ELAPSED_TIME: true
+VALIDATE_ALL_CODEBASE: true
+
+# ---------------------------------------------------------------------------
+# Markdown
+# ---------------------------------------------------------------------------
+
+MARKDOWN_MARKDOWNLINT_CONFIG_FILE: ".markdownlint.jsonc"
+
+# ---------------------------------------------------------------------------
+# YAML
+# ---------------------------------------------------------------------------
+
+YAML_YAMLLINT_ARGUMENTS: "--strict"
+
+# ---------------------------------------------------------------------------
+# Security
+# ---------------------------------------------------------------------------
+
+ACTION_ZIZMOR_UNSECURED_ENV_VARIABLES:
+  - GITHUB_TOKEN
