@@ -10,6 +10,10 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
+# Python is formatted by Ruff, whose default indent width is 4.
+[*.py]
+indent_size = 4
+
 [*.md]
 trim_trailing_whitespace = false
 indent_size = unset

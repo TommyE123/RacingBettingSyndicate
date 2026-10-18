@@ -7,7 +7,7 @@ services:
     container_name: racingbettingsyndicate-backend
     restart: unless-stopped
     volumes:
-      - ./data:/data # Persistent data storage
+      - backend-data:/data # Persistent data storage (named volume: initialised with the image's /data owned by the backend user)
     ports:
       - "8420:8420" # Backend API
     environment:
@@ -34,3 +34,6 @@ services:
       - backend
     ports:
       - "3420:3420" # Web UI
+
+volumes:
+  backend-data:

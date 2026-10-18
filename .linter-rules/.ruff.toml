@@ -19,7 +19,7 @@ select = [
     "PT",
     "RET",
     "RSE",
-    "TCH",
+    "TC",
     "ASYNC",
     "TID",
     "SLF",

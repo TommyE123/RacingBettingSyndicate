@@ -49,12 +49,23 @@ jobs:
 
       - id: detect
         run: |
-          if grep -rqE '^\s*(async )?def ' app --include='*.py' --exclude-dir=tests; then
-            echo "mutable=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No application functions to mutate yet; skipping mutation testing."
-            echo "mutable=false" >> "$GITHUB_OUTPUT"
-          fi
+          python3 - <<'PY'
+          import ast, os, pathlib
+          # Mutmut does not mutate decorated functions (other than @staticmethod/@classmethod),
+          # so only those count as mutable.
+          allowed = {"staticmethod", "classmethod"}
+          mutable = any(
+              isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+              and all(isinstance(d, ast.Name) and d.id in allowed for d in n.decorator_list)
+              for p in pathlib.Path("app").rglob("*.py")
+              if "tests" not in p.parts
+              for n in ast.walk(ast.parse(p.read_text(encoding="utf-8")))
+          )
+          if not mutable:
+              print("No undecorated application functions to mutate yet; skipping mutation testing.")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"mutable={'true' if mutable else 'false'}\n")
+          PY
 
   mutation-testing:
     name: Mutmut
