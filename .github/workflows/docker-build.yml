@@ -5,7 +5,7 @@ name: Docker Build
 #   - smoke-test:      starts that artifact and checks it is healthy (production-smoke-test.yml).
 #   - arm64-startup:   builds the backend linux/arm64 image under QEMU emulation, starts it and
 #                      checks it is healthy.
-#   - frontend-image:  builds the Next.js frontend image once frontend/package-lock.json exists.
+#   - frontend-image:  builds the Next.js frontend image once a frontend lockfile (package-lock.json or pnpm-lock.yaml) exists.
 # No registry or secrets are needed to run the tests, so it works the same for pull requests
 # from forks. Releases are built and pushed by release-please.yml.
 on:
@@ -226,10 +226,10 @@ jobs:
       - name: Detect the frontend
         id: frontend
         run: |
-          if [ -f frontend/package-lock.json ]; then
+          if [ -f frontend/package-lock.json ] || [ -f frontend/pnpm-lock.yaml ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
-            echo "No frontend/package-lock.json yet; skipping the frontend image build."
+            echo "No frontend lockfile yet; skipping the frontend image build."
             echo "present=false" >> "$GITHUB_OUTPUT"
           fi
 
