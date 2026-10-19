@@ -81,12 +81,21 @@
     "**/__pycache__": true,
     "**/.pytest_cache": true,
     "**/node_modules": true,
+    "**/.pnpm-store": true,
     "**/.coverage": true,
     "**/coverage": true
   },
 
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.pnpm-store/**": true,
+    "**/frontend/.next/**": true,
+    "**/.git/objects/**": true
+  },
+
   "search.exclude": {
     "**/node_modules": true,
+    "**/.pnpm-store": true,
     "**/frontend/out": true,
     "**/frontend/.next": true,
     "**/__pycache__": true,

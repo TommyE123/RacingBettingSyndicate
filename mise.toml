@@ -1,6 +1,6 @@
 # Developer CLI tools only. Application dependencies stay in requirements*.txt and
 # frontend/package.json; the npm-based linters stay in .devcontainer/package.json.
-# After editing, run: mise lock --platform linux-x64,linux-arm64
+# After editing, run: mise lock --platform linux-x64
 [tools]
 # Installer for the pypi: tools below.
 uv = "0.13.0"
