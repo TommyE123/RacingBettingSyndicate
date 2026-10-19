@@ -6,7 +6,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 bash .devcontainer/prepare-volumes.sh
 
 # Switch to `mise install --locked` once a lockfile has been generated with
-# `mise lock --platform linux-x64,linux-arm64` (see mise.toml).
+# `mise lock --platform linux-x64` (see mise.toml).
 mise install
 # Only mise's tool installs grow without bound (each version bump leaves the old
 # install behind); prune is a no-op when nothing is superseded.
