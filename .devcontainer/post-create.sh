@@ -17,7 +17,7 @@ python -m pip install -r requirements-dev.txt
 # Install it under ~/.local, which is on the Dev Container PATH, so the VS Code tasks can run
 # `pnpm` without root.
 if [ -f frontend/pnpm-lock.yaml ]; then
-  npm install --global --prefix "${HOME}/.local" --no-audit pnpm@10.28.0
+  npm install --global --prefix "${HOME}/.local" --no-audit pnpm@12.14.0
   export PATH="${HOME}/.local/bin:${PATH}"
   # Keep pnpm's store in the cache volume. Left alone, pnpm creates .pnpm-store inside the
   # project because the workspace is on a different mount from the home directory. This is

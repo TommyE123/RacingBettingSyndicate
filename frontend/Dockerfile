@@ -5,7 +5,7 @@ FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b533
 
 WORKDIR /frontend
 
-RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
+RUN corepack enable && corepack prepare pnpm@12.14.0 --activate
 
 # Install from the lockfile first so the dependency layer is cached
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
