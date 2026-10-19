@@ -16,6 +16,8 @@ on:
       - ".mise/**"
       - "frontend/package.json"
       - "frontend/package-lock.json"
+      - "frontend/pnpm-lock.yaml"
+      - "frontend/pnpm-workspace.yaml"
       - "docker-compose.yml"
       - "Dockerfile"
       - ".dockerignore"
@@ -100,10 +102,15 @@ jobs:
             hadolint --version
             node --version
             npm --version
+            pnpm --version
             osv-scanner --version
             python --version
             trivy --version
             trufflehog --version
+
+            echo "== Frontend dependencies =="
+            test -d frontend/node_modules/next
+            (cd frontend && pnpm exec next --version)
 
             echo "== Development tools =="
             editorconfig-checker --version

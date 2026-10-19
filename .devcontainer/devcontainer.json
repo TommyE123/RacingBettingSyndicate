@@ -66,6 +66,7 @@
 
   "containerEnv": {
     "NPM_CONFIG_CACHE": "/home/vscode/.cache/npm",
+    "npm_config_store_dir": "/home/vscode/.cache/pnpm",
     "UV_LINK_MODE": "copy"
   },
 

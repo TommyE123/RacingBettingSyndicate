@@ -20,7 +20,7 @@
       "label": "RBS: Run Frontend",
       "type": "shell",
       "dependsOn": "RBS: Install Frontend",
-      "command": "pnpm dev",
+      "command": "pnpm dev -p 3420",
       "options": {
         "cwd": "${workspaceFolder}/frontend"
       },
