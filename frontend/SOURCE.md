@@ -4,7 +4,7 @@ The files in this directory (other than this file and `Dockerfile`) are a one-ti
 import of Devias Kit Free (Material Kit React).
 
 | Item        | Value                                              |
-| ----------- | -------------------------------------------------- |
+|-------------|----------------------------------------------------|
 | Source URL  | <https://github.com/devias-io/material-kit-react>  |
 | Branch      | `main`                                             |
 | Commit SHA  | `6423e1a2f092c50d7e1e22f3e43344df02af41de`         |
