@@ -8,9 +8,19 @@
       "problemMatcher": []
     },
     {
+      "label": "RBS: Install Frontend",
+      "type": "shell",
+      "command": "pnpm install --frozen-lockfile",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "RBS: Run Frontend",
       "type": "shell",
-      "command": "npm run dev",
+      "dependsOn": "RBS: Install Frontend",
+      "command": "pnpm dev",
       "options": {
         "cwd": "${workspaceFolder}/frontend"
       },
@@ -37,7 +47,8 @@
     {
       "label": "RBS: Run Frontend Tests",
       "type": "shell",
-      "command": "npm test",
+      "dependsOn": "RBS: Install Frontend",
+      "command": "pnpm test",
       "options": {
         "cwd": "${workspaceFolder}/frontend"
       },
@@ -46,7 +57,8 @@
     {
       "label": "RBS: Build Frontend",
       "type": "shell",
-      "command": "npm run build",
+      "dependsOn": "RBS: Install Frontend",
+      "command": "pnpm build",
       "options": {
         "cwd": "${workspaceFolder}/frontend"
       },
@@ -105,7 +117,8 @@
     {
       "label": "RBS: Check JavaScript",
       "type": "shell",
-      "command": "npm run lint",
+      "dependsOn": "RBS: Install Frontend",
+      "command": "pnpm lint",
       "options": {
         "cwd": "${workspaceFolder}/frontend"
       },
@@ -114,7 +127,8 @@
     {
       "label": "RBS: Check JavaScript Formatting",
       "type": "shell",
-      "command": "npm run format:check",
+      "dependsOn": "RBS: Install Frontend",
+      "command": "pnpm format:check",
       "options": {
         "cwd": "${workspaceFolder}/frontend"
       },
