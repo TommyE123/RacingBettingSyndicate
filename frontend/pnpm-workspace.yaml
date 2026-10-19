@@ -1,0 +1,6 @@
+# Newer pnpm fails `pnpm install` when a dependency has an unreviewed build script.
+# sharp and unrs-resolver ship prebuilt binaries as optional dependencies and the kit
+# builds and runs without their install scripts, so both are explicitly not allowed.
+allowBuilds:
+  sharp: false
+  unrs-resolver: false

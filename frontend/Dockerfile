@@ -8,7 +8,7 @@ WORKDIR /frontend
 RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 
 # Install from the lockfile first so the dependency layer is cached
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . ./
