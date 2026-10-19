@@ -18,7 +18,12 @@ python -m pip install -r requirements-dev.txt
 # `pnpm` without root.
 if [ -f frontend/pnpm-lock.yaml ]; then
   npm install --global --prefix "${HOME}/.local" --no-audit pnpm@10.28.0
-  PATH="${HOME}/.local/bin:${PATH}" pnpm install --frozen-lockfile --dir frontend
+  export PATH="${HOME}/.local/bin:${PATH}"
+  # Keep pnpm's store in the cache volume. Left alone, pnpm creates .pnpm-store inside the
+  # project because the workspace is on a different mount from the home directory. This is
+  # pnpm's own config file; an npm_config_store_dir environment variable makes npm warn.
+  pnpm config set --global store-dir "${HOME}/.cache/pnpm"
+  pnpm install --frozen-lockfile --dir frontend
 elif [ -f frontend/package-lock.json ]; then
   npm ci --prefer-offline --no-audit --prefix frontend
 fi
