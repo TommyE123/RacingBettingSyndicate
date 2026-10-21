@@ -31,7 +31,7 @@
     "@mui/x-date-pickers": "8.5.1",
     "@phosphor-icons/react": "2.1.10",
     "apexcharts": "4.7.0",
-    "dayjs": "1.11.13",
+    "dayjs": "1.11.23",
     "next": "15.3.3",
     "react": "19.1.0",
     "react-apexcharts": "1.7.0",
