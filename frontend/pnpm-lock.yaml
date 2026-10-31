@@ -133,8 +133,8 @@ importers:
         specifier: 59.0.1
         version: 59.0.1(eslint@9.28.0(supports-color@8.1.1))
       globals:
-        specifier: 16.2.0
-        version: 16.2.0
+        specifier: 16.5.0
+        version: 16.5.0
       jest:
         specifier: 30.0.0
         version: 30.0.0(@types/node@24.0.0)(babel-plugin-macros@3.1.0)(supports-color@8.1.1)
@@ -2052,8 +2052,8 @@ packages:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
     engines: {node: '>=18'}
 
-  globals@16.2.0:
-    resolution: {integrity: sha512-O+7l9tPdHCU320IigZZPj5zmRCFG9xHmx9cU8FqU2Rp+JN714seHV+2S9+JslCpY4gJwU2vOGox0wzgae/MCEg==}
+  globals@16.5.0:
+    resolution: {integrity: sha512-c/c15i26VrJ4IRt5Z89DnIzCGDn9EcebibhAOjw5ibqEHsE1wLUgkPn9RDmNcUKyU87GeaL633nyJ+pplFR2ZQ==}
     engines: {node: '>=18'}
 
   globalthis@1.0.4:
@@ -5340,7 +5340,7 @@ snapshots:
       eslint: 9.28.0(supports-color@8.1.1)
       esquery: 1.6.0
       find-up-simple: 1.0.1
-      globals: 16.2.0
+      globals: 16.5.0
       indent-string: 5.0.0
       is-builtin-module: 5.0.0
       jsesc: 3.1.0
@@ -5606,7 +5606,7 @@ snapshots:
 
   globals@14.0.0: {}
 
-  globals@16.2.0: {}
+  globals@16.5.0: {}
 
   globalthis@1.0.4:
     dependencies:
