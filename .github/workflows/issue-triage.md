@@ -37,9 +37,14 @@ permissions:
   issues: read
 # One run at a time per issue, whether it came from an event or a dispatch, so
 # two runs cannot read stale labels or both post a needs-information comment.
-# The run_id fallback only applies if neither number is set.
+# The run_id fallback only applies if neither number is set. Comment events the
+# `if` above will skip (bot comments, other people's comments, pull requests)
+# get a separate "-filtered" group: a workflow-level group is entered before
+# the `if` is evaluated, so a skipped run would otherwise replace the single
+# pending run in the group, such as a reporter's reply queued behind a run in
+# progress, and that reply would never be triaged.
 concurrency:
-  group: "gh-aw-${{ github.workflow }}-${{ github.event.issue.number || github.event.inputs.issue_number || github.run_id }}"
+  group: "gh-aw-${{ github.workflow }}-${{ github.event.issue.number || github.event.inputs.issue_number || github.run_id }}${{ github.event_name == 'issue_comment' && (github.event.issue.pull_request || github.event.comment.user.type == 'Bot' || github.event.comment.user.login != github.event.issue.user.login) && '-filtered' || '' }}"
   job-discriminator: ${{ github.event.issue.number || github.event.inputs.issue_number || github.run_id }}
 engine:
   id: gemini
