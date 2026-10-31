@@ -13,6 +13,7 @@
     "**/.mise/locks/**"
   ],
   "description": "Dependency-update policy for RacingBettingSyndicate. Renovate creates and maintains dependency PRs. Patch updates are automerged once required checks pass; all other updates require manual review and merge.",
+  "timezone": "Europe/London",
   "internalChecksFilter": "strict",
   "forkProcessing": "enabled",
   "platformAutomerge": false,
@@ -21,11 +22,23 @@
   "semanticCommitType": "chore",
   "prConcurrentLimit": 15,
   "prHourlyLimit": 5,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["* 0-3 * * 6"],
+    "automerge": false
+  },
   "packageRules": [
     {
       "description": "Keep automerge disabled by default for all dependency updates. A later, narrower rule enables it only for eligible patch updates.",
       "matchPackageNames": ["*"],
       "automerge": false,
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Group Prettier dependency updates across package files into one PR.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["prettier"],
+      "groupName": "Prettier",
       "minimumReleaseAge": "7 days"
     },
     {
@@ -67,6 +80,14 @@
       ],
       "enabled": false,
       "minimumReleaseAge": null
+    },
+    {
+      "description": "Schedule FastAPI updates for Saturdays.",
+      "matchManagers": ["pip_requirements"],
+      "matchPackageNames": ["fastapi"],
+      "minimumReleaseAge": "7 days",
+      "schedule": ["* * * * 6"],
+      "updateNotScheduled": false
     }
   ]
 }
