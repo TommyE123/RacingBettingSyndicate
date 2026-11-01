@@ -23,7 +23,7 @@
     "@fontsource/inter": "5.2.6",
     "@fontsource/plus-jakarta-sans": "5.2.6",
     "@fontsource/roboto-mono": "5.2.6",
-    "@hookform/resolvers": "5.1.1",
+    "@hookform/resolvers": "5.9.2",
     "@mui/lab": "7.0.0-beta.13",
     "@mui/material": "7.1.1",
     "@mui/system": "7.1.1",
