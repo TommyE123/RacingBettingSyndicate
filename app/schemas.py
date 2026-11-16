@@ -5,6 +5,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from app.config import MAX_PASSWORD_LENGTH
+
 Username = Annotated[
     str,
     StringConstraints(
@@ -16,7 +18,7 @@ Username = Annotated[
     ),
 ]
 DisplayName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
-Password = Annotated[str, StringConstraints(min_length=8, max_length=128)]
+Password = Annotated[str, StringConstraints(min_length=8, max_length=MAX_PASSWORD_LENGTH)]
 CompetitionName = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)
 ]
@@ -35,11 +37,11 @@ class _FromRow(BaseModel):
 
 class LoginRequest(_Strict):
     username: str = Field(max_length=64)
-    password: str = Field(max_length=128)
+    password: str = Field(max_length=MAX_PASSWORD_LENGTH)
 
 
 class PasswordChange(_Strict):
-    current_password: str = Field(max_length=128)
+    current_password: str = Field(max_length=MAX_PASSWORD_LENGTH)
     new_password: Password
 
 

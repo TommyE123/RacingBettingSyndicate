@@ -26,6 +26,7 @@ Bets, the racecard, settlement and the leaderboard are not built yet.
 ### Running locally
 
 ```bash
+mkdir -p data
 pip install -r requirements-dev.txt
 RBS_DATABASE_URL=sqlite:///./data/rbs.sqlite3 RBS_ADMIN_USERNAME=admin \
   RBS_ADMIN_PASSWORD=change-me-please RBS_COOKIE_SECURE=false python -m app.main

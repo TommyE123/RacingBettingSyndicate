@@ -42,9 +42,18 @@ def make_engine(database_url: str) -> Engine:
     engine = create_engine(database_url, **kwargs)
 
     @event.listens_for(engine, "connect")
-    def _enable_foreign_keys(dbapi_connection, _record):
+    def _configure_connection(dbapi_connection, _record):
+        # Stop the driver opening transactions itself, so the BEGIN below is the only one.
+        dbapi_connection.isolation_level = None
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
+
+    @event.listens_for(engine, "begin")
+    def _begin_immediate(connection):
+        # Take SQLite's write lock at the start of every transaction, so a check and the
+        # write that depends on it (last active admin, password still current, and later a
+        # stake against the remaining budget) cannot interleave with another request.
+        connection.exec_driver_sql("BEGIN IMMEDIATE")
 
     return engine

@@ -1,3 +1,4 @@
+import sqlite3
 from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
@@ -83,3 +84,26 @@ def test_file_database_is_created(tmp_path):
     Base.metadata.create_all(engine)
     assert path.exists()
     engine.dispose()
+
+
+def test_a_transaction_holds_the_write_lock_from_its_first_statement(tmp_path):
+    engine = make_engine(f"sqlite:///{tmp_path / 'rbs.sqlite3'}")
+    Base.metadata.create_all(engine)
+    other = sqlite3.connect(tmp_path / "rbs.sqlite3", timeout=0.05, isolation_level=None)
+    try:
+        with Session(engine) as first:
+            first.scalar(select(User.id))  # only a read, but the check-then-write starts here
+            with pytest.raises(sqlite3.OperationalError, match="locked"):
+                other.execute("BEGIN IMMEDIATE")
+            first.commit()
+        other.execute("BEGIN IMMEDIATE")  # free again once the first transaction ends
+        other.execute("ROLLBACK")
+    finally:
+        other.close()
+        engine.dispose()
+
+
+def test_rolled_back_work_is_not_kept(db):
+    add_user(db)
+    db.rollback()
+    assert db.scalar(select(User.id)) is None

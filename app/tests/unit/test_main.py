@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -85,3 +86,34 @@ def test_settings_from_env(monkeypatch):
 def test_create_app_reads_the_environment_by_default(monkeypatch):
     monkeypatch.setenv("RBS_DATABASE_URL", "sqlite://")
     assert create_app().state.settings.database_url == "sqlite://"
+
+
+def test_blank_bootstrap_username_creates_nobody():
+    app = create_app(
+        Settings(
+            database_url="sqlite://",
+            bootstrap_admin_username="   ",
+            bootstrap_admin_password="p" * 8,
+        )
+    )
+    with TestClient(app):
+        assert user_count(app) == 0
+
+
+def test_bootstrap_username_is_trimmed_and_lower_cased():
+    app = create_app(
+        Settings(
+            database_url="sqlite://",
+            bootstrap_admin_username=" Tom ",
+            bootstrap_admin_password="p" * 8,
+        )
+    )
+    with TestClient(app), Session(app.state.engine) as db:
+        user = db.scalars(select(User)).one()
+        assert (user.username, user.display_name) == ("tom", "Tom")
+
+
+def test_bootstrap_password_too_long_to_sign_in_with_is_refused_at_start_up():
+    assert Settings(bootstrap_admin_password="p" * 128).bootstrap_admin_password == "p" * 128
+    with pytest.raises(ValueError, match="at most 128 characters"):
+        Settings(bootstrap_admin_password="p" * 129)

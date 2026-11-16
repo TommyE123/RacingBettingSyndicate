@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 
 DEFAULT_DATABASE_URL = "sqlite:////data/rbs.sqlite3"
+# The longest password the sign-in request accepts (see app/schemas.py).
+MAX_PASSWORD_LENGTH = 128
 
 
 @dataclass(frozen=True)
@@ -15,6 +17,12 @@ class Settings:
     # Send the session cookie over HTTPS only. Turn off for plain-HTTP local use.
     cookie_secure: bool = True
     session_days: int = 30
+
+    def __post_init__(self) -> None:
+        password = self.bootstrap_admin_password
+        if password is not None and len(password) > MAX_PASSWORD_LENGTH:
+            # Such an admin could never sign in, and bootstrap does not run a second time.
+            raise ValueError(f"RBS_ADMIN_PASSWORD must be at most {MAX_PASSWORD_LENGTH} characters")
 
     @classmethod
     def from_env(cls) -> Settings:

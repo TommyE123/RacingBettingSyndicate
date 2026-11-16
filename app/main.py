@@ -28,15 +28,16 @@ def bootstrap_admin(db: Session, settings: Settings) -> None:
     """Create the first admin from the environment, only while there are no users at all."""
     if db.scalar(select(func.count()).select_from(User)):
         return
-    username, password = settings.bootstrap_admin_username, settings.bootstrap_admin_password
+    username = (settings.bootstrap_admin_username or "").strip()
+    password = settings.bootstrap_admin_password
     if not username or not password:
         logger.warning(
             "No users exist. Set RBS_ADMIN_USERNAME and RBS_ADMIN_PASSWORD to create the first admin."
         )
         return
     user = User(
-        username=username.strip().lower(),
-        display_name=username.strip(),
+        username=username.lower(),
+        display_name=username,
         password_hash=hash_password(password),
         role=Role.ADMIN.value,
     )
