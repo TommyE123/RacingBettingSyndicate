@@ -10,6 +10,7 @@ export interface UserContextValue {
   user: User | null;
   error: string | null;
   isLoading: boolean;
+  isAdmin: boolean;
   checkSession?: () => Promise<void>;
 }
 
@@ -27,31 +28,27 @@ export function UserProvider({ children }: UserProviderProps): React.JSX.Element
   });
 
   const checkSession = React.useCallback(async (): Promise<void> => {
-    try {
-      const { data, error } = await authClient.getUser();
-
-      if (error) {
-        logger.error(error);
-        setState((prev) => ({ ...prev, user: null, error: 'Something went wrong', isLoading: false }));
-        return;
-      }
-
-      setState((prev) => ({ ...prev, user: data ?? null, error: null, isLoading: false }));
-    } catch (error) {
+    const { data, error } = await authClient.getUser();
+    if (error) {
       logger.error(error);
-      setState((prev) => ({ ...prev, user: null, error: 'Something went wrong', isLoading: false }));
+      setState({ user: null, error, isLoading: false });
+      return;
     }
+    setState({ user: data ?? null, error: null, isLoading: false });
   }, []);
 
   React.useEffect(() => {
-    checkSession().catch((error) => {
+    checkSession().catch((error: unknown) => {
       logger.error(error);
-      // noop
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Expected
-  }, []);
+  }, [checkSession]);
 
-  return <UserContext.Provider value={{ ...state, checkSession }}>{children}</UserContext.Provider>;
+  const value = React.useMemo(
+    () => ({ ...state, isAdmin: state.user?.role === 'admin', checkSession }),
+    [state, checkSession]
+  );
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
 
 export const UserConsumer = UserContext.Consumer;
