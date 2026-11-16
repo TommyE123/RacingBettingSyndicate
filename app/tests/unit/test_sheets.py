@@ -1,4 +1,8 @@
 import pytest
+from fastapi.testclient import TestClient
+
+from app.routers import sheets as sheets_router
+from app.routers.sheets import MAX_IMAGE_BYTES, sniff_image
 
 from .conftest import sign_in
 from .test_slips import festival, lucky15, post_slip  # noqa: F401 - festival is a fixture
@@ -137,3 +141,57 @@ def test_missing_image_file_is_404(member, festival, tmp_path):  # noqa: F811
         path.unlink()
     assert member.get(f"/api/sheets/{sheet['id']}/image").status_code == 404
     assert member.get("/api/sheets/999/image").status_code == 404
+
+
+@pytest.mark.parametrize(
+    ("data", "expected"),
+    [
+        (b"\xff\xd8\xff\xe0rest", ("image/jpeg", "jpg")),
+        (b"\x89PNG\r\n\x1a\nrest", ("image/png", "png")),
+        (b"RIFF\x00\x00\x00\x00WEBPVP8 ", ("image/webp", "webp")),
+        (b"\x00\x00\x00\x18ftypheic\x00\x00", ("image/heic", "heic")),
+        (b"\x00\x00\x00\x18ftypmif1\x00\x00", ("image/heic", "heic")),
+        (b"GIF89a\x01\x00", ("image/gif", "gif")),
+        (b"RIFF\x00\x00\x00\x00WAVEfmt ", None),
+        (b"\x00\x00\x00\x18ftypisom\x00\x00", None),
+        (b"%PDF-1.7", None),
+    ],
+)
+def test_image_types_are_recognised_from_their_first_bytes(data, expected):
+    assert sniff_image(data) == expected
+
+
+def test_an_oversized_upload_without_a_size_header_is_refused(member, festival):  # noqa: F811
+    def chunks():
+        yield JPEG
+        yield b"\x00" * MAX_IMAGE_BYTES
+
+    response = member.post(
+        f"/api/competitions/{festival['id']}/sheets",
+        params={"day_id": festival["tue"]},
+        content=chunks(),
+        headers={"Content-Type": "image/jpeg"},
+    )
+    assert "content-length" not in {key.lower() for key in response.request.headers}
+    assert response.status_code == 413
+
+
+def test_a_failed_save_leaves_no_orphan_photo(app, member, festival, tmp_path, monkeypatch):  # noqa: F811
+    def broken(*_args, **_kwargs):
+        raise RuntimeError("audit write failed")
+
+    monkeypatch.setattr(sheets_router.audit, "record", broken)
+    client = TestClient(app, cookies=member.cookies)
+    with pytest.raises(RuntimeError, match="audit write failed"):
+        upload(client, festival)
+    assert list((tmp_path / "uploads").iterdir()) == []
+    assert member.get(f"/api/competitions/{festival['id']}/sheets").json() == []
+
+
+def test_updating_a_sheet_with_nothing_new_records_nothing(member, festival, audit_actions):  # noqa: F811
+    sheet = upload(member, festival, stated_total_pence=500, note="Day 1").json()
+    before = audit_actions()
+    url = f"/api/sheets/{sheet['id']}"
+    for body in ({}, {"stated_total_pence": 500}, {"note": "Day 1"}, {"day_id": festival["tue"]}):
+        assert member.patch(url, json=body).status_code == 200
+    assert audit_actions() == before

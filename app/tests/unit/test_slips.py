@@ -320,3 +320,11 @@ def test_a_day_or_entry_with_slips_cannot_be_removed(admin, member, festival):
     cid = festival["id"]
     assert admin.delete(f"/api/admin/competitions/{cid}/days/{festival['tue']}").status_code == 409
     assert admin.delete(f"/api/admin/competitions/{cid}/entries/2").status_code == 409
+
+
+def test_an_absurd_total_stake_is_refused(member, festival):
+    # £100,000 a bet on an each-way Lucky 15 would be £3 million.
+    body = lucky15(festival["tue"], unit_stake_pence=10_000_000)
+    response = post_slip(member, festival, body)
+    assert response.status_code == 422
+    assert "too large" in response.text
