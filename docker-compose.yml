@@ -12,6 +12,12 @@ services:
       - "8420:8420" # Backend API
     environment:
       - PYTHONUNBUFFERED=1
+      # First admin login, created only while the database has no users. Set both in a local
+      # .env file (never committed); they are ignored once any user exists.
+      - RBS_ADMIN_USERNAME=${RBS_ADMIN_USERNAME:-}
+      - RBS_ADMIN_PASSWORD=${RBS_ADMIN_PASSWORD:-}
+      # Session cookies are HTTPS-only by default. Set to false when serving over plain HTTP.
+      - RBS_COOKIE_SECURE=${RBS_COOKIE_SECURE:-true}
     healthcheck:
       test:
         [

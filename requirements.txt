@@ -1,1 +1,4 @@
-# Backend (FastAPI) runtime dependencies. Add them with the backend code.
+# Backend (FastAPI) runtime dependencies.
+fastapi==0.163.1
+uvicorn==0.54.0
+SQLAlchemy==2.1.8
