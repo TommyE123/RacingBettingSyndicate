@@ -1,6 +1,7 @@
 """Database engine and session helpers (SQLite via SQLAlchemy)."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import DateTime, Engine, create_engine, event
 from sqlalchemy.orm import DeclarativeBase
@@ -34,7 +35,7 @@ class Base(DeclarativeBase):
 
 
 def make_engine(database_url: str) -> Engine:
-    kwargs = {"connect_args": {"check_same_thread": False}}
+    kwargs: dict[str, Any] = {"connect_args": {"check_same_thread": False}}
     if database_url in ("sqlite://", "sqlite:///:memory:"):
         # One shared connection, so an in-memory database survives across sessions.
         kwargs["poolclass"] = StaticPool

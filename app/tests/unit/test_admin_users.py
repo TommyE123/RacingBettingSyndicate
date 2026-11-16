@@ -57,6 +57,7 @@ def test_create_user_stores_only_a_hash_and_audits_without_the_password(app, adm
     with Session(app.state.engine) as db:
         stored = db.scalar(select(User.password_hash).where(User.username == "bob"))
         audit_rows = db.scalars(select(AuditLog)).all()
+    assert stored is not None
     assert "a-very-secret-pw" not in stored
     created = next(row for row in audit_rows if row.action == "user.created")
     assert created.actor_user_id == 1

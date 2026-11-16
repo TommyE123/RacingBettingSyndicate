@@ -17,11 +17,11 @@ Bets, the racecard, settlement and the leaderboard are not built yet.
 
 ### Settings
 
-| Variable | Purpose | Default |
-|---|---|---|
-| `RBS_DATABASE_URL` | SQLAlchemy URL of the SQLite database | `sqlite:////data/rbs.sqlite3` |
-| `RBS_ADMIN_USERNAME`, `RBS_ADMIN_PASSWORD` | First admin, created only while there are no users | unset |
-| `RBS_COOKIE_SECURE` | Send the session cookie over HTTPS only; set `false` for plain HTTP | `true` |
+| Variable                                   | Purpose                                                             | Default                       |
+|--------------------------------------------|---------------------------------------------------------------------|-------------------------------|
+| `RBS_DATABASE_URL`                         | SQLAlchemy URL of the SQLite database                               | `sqlite:////data/rbs.sqlite3` |
+| `RBS_ADMIN_USERNAME`, `RBS_ADMIN_PASSWORD` | First admin, created only while there are no users                  | unset                         |
+| `RBS_COOKIE_SECURE`                        | Send the session cookie over HTTPS only; set `false` for plain HTTP | `true`                        |
 
 ### Running locally
 

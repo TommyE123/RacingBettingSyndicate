@@ -42,11 +42,11 @@ def _commit_or_conflict(db: Session, message: str) -> None:
 
 
 def _other_active_admins(db: Session, user: User) -> int:
-    return db.scalar(
+    return db.scalars(
         select(func.count())
         .select_from(User)
         .where(User.role == Role.ADMIN.value, User.is_active, User.id != user.id)
-    )
+    ).one()
 
 
 # --- Users ---------------------------------------------------------------
