@@ -1,15 +1,17 @@
 """Admin-only management of users, competitions, days and entries."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 
 from app import audit
 from app.deps import AdminUser, DbSession  # noqa: TC001 - FastAPI reads these at runtime
-from app.models import AuthSession, Competition, CompetitionDay, Entry, Role, User
+from app.models import AuditLog, AuthSession, Competition, CompetitionDay, Entry, Role, User
+from app.routers.bets import audit_out
 from app.schemas import (
+    AuditOut,
     CompetitionCreate,
     CompetitionUpdate,
     DayCreate,
@@ -248,3 +250,25 @@ def remove_entry(competition_id: int, user_id: int, admin: AdminUser, db: DbSess
     )
     db.delete(entry)
     _commit_or_conflict(db, "That entry is in use and cannot be removed")
+
+
+# --- Audit log ------------------------------------------------------------
+
+
+@router.get("/audit")
+def list_audit(
+    _admin: AdminUser,
+    db: DbSession,
+    limit: Annotated[int, Query(ge=1, le=500)] = 100,
+    before_id: int | None = None,
+    entity_type: str | None = None,
+    actor_user_id: int | None = None,
+) -> list[AuditOut]:
+    query = select(AuditLog).order_by(AuditLog.id.desc()).limit(limit)
+    if before_id is not None:
+        query = query.where(AuditLog.id < before_id)
+    if entity_type:
+        query = query.where(AuditLog.entity_type == entity_type)
+    if actor_user_id is not None:
+        query = query.where(AuditLog.actor_user_id == actor_user_id)
+    return audit_out(db, list(db.scalars(query)))

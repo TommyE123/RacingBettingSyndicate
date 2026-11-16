@@ -109,3 +109,115 @@ class AuditLog(Base):
     entity_type: Mapped[str] = mapped_column(String(32))
     entity_id: Mapped[int | None] = mapped_column()
     detail: Mapped[str] = mapped_column(Text, default="{}")
+
+
+class Sheet(Base):
+    """A photo of a member's written bets, kept so slips can be checked against it."""
+
+    __tablename__ = "sheets"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    entry_id: Mapped[int] = mapped_column(ForeignKey("entries.id", ondelete="RESTRICT"), index=True)
+    day_id: Mapped[int] = mapped_column(
+        ForeignKey("competition_days.id", ondelete="RESTRICT"), index=True
+    )
+    # Name of the stored file inside the upload directory; never a user-supplied path.
+    filename: Mapped[str] = mapped_column(String(64), unique=True)
+    content_type: Mapped[str] = mapped_column(String(32))
+    size_bytes: Mapped[int] = mapped_column()
+    # The total written on the sheet, for checking the slips entered from it.
+    stated_total_pence: Mapped[int | None] = mapped_column()
+    note: Mapped[str | None] = mapped_column(String(500))
+    uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    created_at: Mapped[dt.datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+    entry: Mapped[Entry] = relationship()
+    day: Mapped[CompetitionDay] = relationship()
+
+    __table_args__ = (
+        CheckConstraint(
+            "stated_total_pence IS NULL OR stated_total_pence >= 0", name="ck_sheets_total"
+        ),
+    )
+
+
+class Slip(Base):
+    """One bet as placed: a bet type over some horses, with its total stake and return.
+
+    The stake always equals unit stake x lines (x2 each-way); the database enforces it.
+    The return is what the member says their bookmaker paid, or NULL until declared.
+    """
+
+    __tablename__ = "slips"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    entry_id: Mapped[int] = mapped_column(ForeignKey("entries.id", ondelete="RESTRICT"), index=True)
+    # The day the bet was placed; its stake counts against the budget from this day.
+    day_id: Mapped[int] = mapped_column(
+        ForeignKey("competition_days.id", ondelete="RESTRICT"), index=True
+    )
+    sheet_id: Mapped[int | None] = mapped_column(
+        ForeignKey("sheets.id", ondelete="SET NULL"), index=True
+    )
+    bet_type: Mapped[str] = mapped_column(String(16))
+    fold_size: Mapped[int | None] = mapped_column()
+    each_way: Mapped[bool] = mapped_column(default=False)
+    unit_stake_pence: Mapped[int] = mapped_column()
+    line_count: Mapped[int] = mapped_column()
+    stake_pence: Mapped[int] = mapped_column()
+    return_pence: Mapped[int | None] = mapped_column()
+    note: Mapped[str | None] = mapped_column(String(500))
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    created_at: Mapped[dt.datetime] = mapped_column(UTCDateTime, default=utcnow)
+    updated_at: Mapped[dt.datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
+    voided_at: Mapped[dt.datetime | None] = mapped_column(UTCDateTime)
+    voided_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    void_reason: Mapped[str | None] = mapped_column(String(200))
+
+    entry: Mapped[Entry] = relationship()
+    day: Mapped[CompetitionDay] = relationship()
+    selections: Mapped[list[SlipSelection]] = relationship(
+        back_populates="slip",
+        order_by="SlipSelection.position",
+        cascade="all, delete-orphan",
+    )
+
+    __table_args__ = (
+        CheckConstraint("unit_stake_pence > 0", name="ck_slips_unit_positive"),
+        CheckConstraint("line_count > 0", name="ck_slips_lines_positive"),
+        CheckConstraint(
+            "stake_pence = unit_stake_pence * line_count * (CASE WHEN each_way THEN 2 ELSE 1 END)",
+            name="ck_slips_stake_adds_up",
+        ),
+        CheckConstraint("return_pence IS NULL OR return_pence >= 0", name="ck_slips_return"),
+        CheckConstraint(
+            "bet_type IN ('single', 'double', 'treble', 'accumulator', 'trixie', 'patent',"
+            " 'yankee', 'lucky15', 'canadian', 'lucky31', 'heinz', 'lucky63', 'super_heinz',"
+            " 'goliath', 'perm')",
+            name="ck_slips_bet_type",
+        ),
+        CheckConstraint(
+            "(bet_type = 'perm') = (fold_size IS NOT NULL)", name="ck_slips_fold_only_for_perm"
+        ),
+    )
+
+
+class SlipSelection(Base):
+    """One horse on a slip, as written. Legs may run on different days."""
+
+    __tablename__ = "slip_selections"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    slip_id: Mapped[int] = mapped_column(ForeignKey("slips.id", ondelete="CASCADE"), index=True)
+    position: Mapped[int] = mapped_column()
+    day_id: Mapped[int] = mapped_column(
+        ForeignKey("competition_days.id", ondelete="RESTRICT"), index=True
+    )
+    race_time: Mapped[str] = mapped_column(String(5))
+    horse_name: Mapped[str] = mapped_column(String(80))
+    note: Mapped[str | None] = mapped_column(String(100))
+
+    slip: Mapped[Slip] = relationship(back_populates="selections")
+    day: Mapped[CompetitionDay] = relationship()
+
+    __table_args__ = (UniqueConstraint("slip_id", "position", name="uq_selection_position"),)
