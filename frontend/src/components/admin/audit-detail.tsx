@@ -1,9 +1,13 @@
+'use client';
+
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
 import type { AuditEntry } from '@/types/api';
+import { shortDayName } from '@/lib/days';
 import { formatPence } from '@/lib/money';
+import { useCompetition } from '@/contexts/competition-context';
 
 const ACTIONS: Record<string, string> = {
   'auth.login': 'Signed in',
@@ -48,12 +52,15 @@ const LABELS: Record<string, string> = {
   sheet_id: 'Sheet',
 };
 
-function show(key: string, value: unknown): string {
+function show(key: string, value: unknown, dayLabel: (id: number) => string): string {
   if (value === null || value === undefined) {
     return 'none';
   }
   if (key.endsWith('_pence') && typeof value === 'number') {
     return formatPence(value);
+  }
+  if (key === 'day_id' && typeof value === 'number') {
+    return dayLabel(value);
   }
   if (typeof value === 'boolean') {
     return value ? 'yes' : 'no';
@@ -69,6 +76,11 @@ function show(key: string, value: unknown): string {
 
 // A readable summary of an audit row's detail: "Return: none → £86.50".
 export function AuditDetail({ entry }: { entry: AuditEntry }): React.JSX.Element | null {
+  const { dayById } = useCompetition();
+  const dayLabel = (id: number): string => {
+    const day = dayById(id);
+    return day ? shortDayName(day) : `day #${id}`;
+  };
   const detail = entry.detail ?? {};
   const changes = detail.changes as Record<string, unknown> | undefined;
   const lines: string[] = [];
@@ -76,9 +88,9 @@ export function AuditDetail({ entry }: { entry: AuditEntry }): React.JSX.Element
     for (const [key, change] of Object.entries(changes)) {
       if (change && typeof change === 'object' && 'from' in change && 'to' in change) {
         const { from, to } = change as { from: unknown; to: unknown };
-        lines.push(`${LABELS[key] ?? key.replaceAll('_', ' ')}: ${show(key, from)} → ${show(key, to)}`);
+        lines.push(`${LABELS[key] ?? key.replaceAll('_', ' ')}: ${show(key, from, dayLabel)} → ${show(key, to, dayLabel)}`);
       } else {
-        lines.push(`${LABELS[key] ?? key}: ${show(key, change)}`);
+        lines.push(`${LABELS[key] ?? key}: ${show(key, change, dayLabel)}`);
       }
     }
   } else {
@@ -86,7 +98,7 @@ export function AuditDetail({ entry }: { entry: AuditEntry }): React.JSX.Element
       if (key === 'competition_id' || value === null) {
         continue;
       }
-      lines.push(`${LABELS[key] ?? key.replaceAll('_', ' ')}: ${show(key, value)}`);
+      lines.push(`${LABELS[key] ?? key.replaceAll('_', ' ')}: ${show(key, value, dayLabel)}`);
     }
   }
   if (lines.length === 0) {

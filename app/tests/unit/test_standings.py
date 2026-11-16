@@ -166,3 +166,15 @@ def test_standings_need_sign_in_and_a_real_competition(anon, member):
     assert anon.get("/api/competitions/1/standings").status_code == 401
     assert member.get("/api/competitions/999/standings").status_code == 404
     assert member.get("/api/competitions/999/stats").status_code == 404
+
+
+def test_people_who_did_not_bet_that_day_cannot_win_it(admin, member, festival):  # noqa: F811
+    # Only Maurizio bets on Tuesday, and loses; Jacko did nothing, so his £0 does not win.
+    lost = post_slip(member, festival, single(festival["tue"], 1_000)).json()
+    settle(member, lost, 0)
+    table = standings(member, festival)
+    assert table["daily_winners"] == [
+        {"day_id": festival["tue"], "profit_pence": -1_000, "user_ids": [2]}
+    ]
+    rows = {row["display_name"]: row["days_won"] for row in table["rows"]}
+    assert rows == {"Jacko": 0, "Maurizio": 1}

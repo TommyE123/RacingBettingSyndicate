@@ -68,9 +68,11 @@ function NewBet({ competition }: { competition: CompetitionDetail }): React.JSX.
   }
 
   const owner = sheet.data?.user_id ?? null;
+  const startDay = sheet.data?.day_id ?? saved[0]?.day_id ?? null;
   const form = (
     <SlipForm
-      key={`${formKey}-${owner ?? ''}`}
+      defaultDayId={startDay}
+      key={`${formKey}-${owner ?? ''}-${startDay ?? ''}`}
       onSaved={(slip) => {
         notify(`Saved: ${betHeadline(slip)} for ${formatPence(slip.stake_pence)}${slip.over_budget ? ' (over budget, flagged)' : ''}`);
         setSaved((current) => [slip, ...current]);

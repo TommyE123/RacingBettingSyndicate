@@ -60,17 +60,20 @@ export interface SlipFormProps {
   slip?: Slip;
   sheetId?: number | null;
   ownerId?: number | null;
+  // The day to start on: the sheet's day, or the day of the bet entered just before.
+  defaultDayId?: number | null;
   onSaved: (slip: Slip) => void;
   onCancel?: () => void;
 }
 
-export function SlipForm({ slip, sheetId, ownerId, onSaved, onCancel }: SlipFormProps): React.JSX.Element {
+export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCancel }: SlipFormProps): React.JSX.Element {
   const { user, isAdmin } = useUser();
   const { competition, betTypes, version, bump } = useCompetition();
   const days = React.useMemo(() => competition?.days ?? [], [competition]);
   const entrants = competition?.entrants ?? [];
   const editing = Boolean(slip);
-  const startDay = slip?.day_id ?? defaultDay(days)?.id ?? '';
+  const startDay =
+    slip?.day_id ?? (days.some((day) => day.id === defaultDayId) ? defaultDayId : null) ?? defaultDay(days)?.id ?? '';
 
   const defaultOwner =
     slip?.user_id ??
@@ -330,7 +333,7 @@ export function SlipForm({ slip, sheetId, ownerId, onSaved, onCancel }: SlipForm
                       error={showErrors && !foldSize}
                       fullWidth
                       helperText="Every combination of this size"
-                      label="Perm"
+                      label="Perm size"
                       onChange={(event) => {
                         setFoldSize(Number(event.target.value));
                       }}
@@ -505,7 +508,7 @@ export function SlipForm({ slip, sheetId, ownerId, onSaved, onCancel }: SlipForm
                 </ToggleButtonGroup>
                 <MoneyField
                   error={showErrors && (unitPence === null || Boolean(stakeProblem))}
-                  helperText={stakeMode === 'unit' ? 'As written: "£1 e/w Lucky 15" means 1' : 'The circled total on the sheet'}
+                  helperText={stakeMode === 'unit' ? 'As written: £1 e/w Lucky 15 is 1' : 'The total circled on the sheet'}
                   label={stakeMode === 'unit' ? 'Stake per bet' : 'Total stake'}
                   onChange={(text) => {
                     setStakeText(text);

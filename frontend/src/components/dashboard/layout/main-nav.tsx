@@ -71,9 +71,15 @@ export function MainNav(): React.JSX.Element {
                 href={paths.dashboard.newBet}
                 size="small"
                 startIcon={<PlusIcon />}
+                sx={{ whiteSpace: 'nowrap' }}
                 variant="contained"
               >
-                Add a bet
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                  Add a bet
+                </Box>
+                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                  Bet
+                </Box>
               </Button>
             ) : null}
             <Avatar

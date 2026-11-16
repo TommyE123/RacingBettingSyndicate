@@ -7,7 +7,7 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
-import Chip from '@mui/material/Chip';
+import { Chip } from '@/components/common/chip';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';

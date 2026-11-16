@@ -2,7 +2,7 @@ import * as React from 'react';
 import RouterLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
+import { Chip } from '@/components/common/chip';
 import Divider from '@mui/material/Divider';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import MenuItem from '@mui/material/MenuItem';

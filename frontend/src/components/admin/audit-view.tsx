@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
+import { Chip } from '@/components/common/chip';
 import Link from '@mui/material/Link';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';

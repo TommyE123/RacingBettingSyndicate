@@ -7,7 +7,7 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
+import { Chip } from '@/components/common/chip';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';

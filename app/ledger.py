@@ -147,17 +147,26 @@ def standings(
         for row in rows:
             row["days"][day_index]["rank"] = day_ranks[row["user_id"]]
 
+    # A day's winner is the best of those who staked or got a return that day; people who
+    # did nothing that day are not in the running, so their £0 cannot win it.
     daily_winners = []
     for day_index, day_id in enumerate(day_order):
-        if day_id not in active_days or not rows:
+        if day_id not in active_days:
             continue
-        best = max(row["days"][day_index]["profit_pence"] for row in rows)
+        players = [
+            row
+            for row in rows
+            if row["days"][day_index]["staked_pence"] or row["days"][day_index]["returned_pence"]
+        ]
+        best = max(row["days"][day_index]["profit_pence"] for row in players)
         daily_winners.append(
             {
                 "day_id": day_id,
                 "profit_pence": best,
                 "user_ids": [
-                    row["user_id"] for row in rows if row["days"][day_index]["profit_pence"] == best
+                    row["user_id"]
+                    for row in players
+                    if row["days"][day_index]["profit_pence"] == best
                 ],
             }
         )

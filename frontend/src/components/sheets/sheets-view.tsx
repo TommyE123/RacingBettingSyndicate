@@ -10,7 +10,7 @@ import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
 import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
-import Chip from '@mui/material/Chip';
+import { Chip } from '@/components/common/chip';
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 import MenuItem from '@mui/material/MenuItem';
@@ -280,7 +280,8 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
       ) : null}
       {competition.days
         .filter((day) => byDay.has(day.id))
-        .toReversed()
+        // filter() returns a new array, so reversing it leaves the competition's days alone.
+        .reverse()
         .map((day) => (
           <Stack key={day.id} spacing={2}>
             <Typography variant="h6">{dayName(dayById(day.id))}</Typography>

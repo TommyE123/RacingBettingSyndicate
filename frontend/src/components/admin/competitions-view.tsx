@@ -8,7 +8,7 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
 import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
+import { Chip } from '@/components/common/chip';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
