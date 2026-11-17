@@ -11,7 +11,7 @@ name: Update Mutation Results
 # paths-ignore stops this workflow's own badge-only merge from re-triggering it
 # (a loop); a push that also changes any other file still runs. Release Please
 # release merges (chore(main): release ...) are skipped; workflow_dispatch always runs.
-on:
+on: # zizmor: ignore[concurrency-limits] - the update job holds a job-level group, so a run skipped by its `if` never replaces a queued real run.
   push:
     branches:
       - main

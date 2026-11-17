@@ -27,8 +27,13 @@ DISABLE_LINTERS:
   - PYTHON_MYPY
   - PYTHON_PYLINT
   - REPOSITORY_GRYPE
+  - REPOSITORY_OSV_SCANNER
   - REPOSITORY_SYFT
 
+# Report-only linters (run and report, but never fail the build). ACTION_ZIZMOR runs the
+# auditor persona and stays report-only while findings remain: the main-only workflows'
+# secrets need GitHub Environments. Making the frontend linters blocking is tracked in #6,
+# and Trivy in #5.
 DISABLE_ERRORS_LINTERS:
   - ACTION_ZIZMOR
   - CSS_STYLELINT
@@ -38,7 +43,6 @@ DISABLE_ERRORS_LINTERS:
   - JSON_PRETTIER
   - MARKDOWN_MARKDOWN_TABLE_FORMATTER
   - MARKDOWN_MARKDOWNLINT
-  - REPOSITORY_OSV_SCANNER
   - REPOSITORY_TRIVY
   - YAML_PRETTIER
   - YAML_YAMLLINT
@@ -117,6 +121,19 @@ DOCKERFILE_HADOLINT_FILE_NAMES_REGEX: ["Dockerfile(\\..+)?"]
 
 ACTION_ZIZMOR_UNSECURED_ENV_VARIABLES:
   - GITHUB_TOKEN
+
+# The auditor persona reports every finding, down to informational and low-confidence ones.
+# Inline `# zizmor: ignore[...]` comments with a reason are honoured.
+ACTION_ZIZMOR_ARGUMENTS:
+  - "--persona"
+  - "auditor"
+  - "--min-severity"
+  - "informational"
+  - "--min-confidence"
+  - "low"
+  - "--format"
+  - "plain"
+  - "--no-progress"
 
 REPOSITORY_TRIVY_CONFIG_FILE: .trivy.yaml
 

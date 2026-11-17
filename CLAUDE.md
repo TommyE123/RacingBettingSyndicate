@@ -58,7 +58,7 @@ and auditability matter more than speed.
 - Linter configs live in `.linter-rules/` (for example `.ruff.toml`, `.markdownlint.jsonc`,
   `.yamllint.yml`). Before editing a file, read the config for its type, and match its formatting
   rather than your own defaults. Markdown lines are limited to 100 characters (`MD013`) and tables
-  are aligned (`MD060`). If the config isn't there, check `.mega-linter.yml` in the root (it sets
+  are aligned (`MD060`). If the config isn't there, check `.linter-rules/.mega-linter.yml` (it sets
   `LINTER_RULES_PATH` and some per-linter config files), `.editorconfig` in the root, and
   `frontend/eslint.config.mjs` for the frontend.
 - Config checks that need no application code: YAML, Markdown and shell scripts (for example
