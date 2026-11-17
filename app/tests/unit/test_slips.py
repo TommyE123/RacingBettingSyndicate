@@ -353,3 +353,51 @@ def test_history_returns_the_latest_changes_and_pages_back(member, festival):
     assert [row["id"] for row in latest] == [row["id"] for row in every[-2:]]
     earlier = member.get(f"{url}/history", params={"limit": 2, "before_id": latest[0]["id"]}).json()
     assert [row["id"] for row in earlier] == [row["id"] for row in every[-4:-2]]
+
+
+def test_changing_a_settled_bet_clears_its_return_but_a_spelling_fix_keeps_it(member, festival):
+    slip = post_slip(member, festival, lucky15(festival["tue"])).json()
+    url = f"/api/slips/{slip['id']}"
+    assert member.put(f"{url}/return", json={"return_pence": 8650}).status_code == 200
+
+    # Correcting a horse's name, a race time and a note is the same bet: the return stays.
+    body = lucky15(festival["tue"])
+    body["selections"][2]["horse_name"] = "Love Envoi"
+    body["selections"][0]["race_time"] = "2:15"
+    body["note"] = "from the photo"
+    assert member.put(url, json=body).json()["return_pence"] == 8650
+
+    # A different stake is a different bet: the return is cleared and the clear is audited.
+    body["unit_stake_pence"] = 200
+    edited = member.put(url, json=body).json()
+    assert edited["return_pence"] is None
+    last = member.get(f"{url}/history").json()[-1]
+    assert last["action"] == "slip.updated"
+    assert last["detail"]["changes"]["return_pence"] == {"from": 8650, "to": None}
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"bet_type": "yankee"},
+        {"each_way": False},
+        {"day_id": "wed"},
+        {"leg_day": "wed"},
+    ],
+)
+def test_each_change_to_what_was_bet_clears_the_return(member, festival, change):
+    slip = post_slip(member, festival, lucky15(festival["tue"])).json()
+    url = f"/api/slips/{slip['id']}"
+    member.put(f"{url}/return", json={"return_pence": 500})
+    body = lucky15(festival["tue"])
+    if "bet_type" in change:
+        body["bet_type"] = change["bet_type"]
+    if "each_way" in change:
+        body["each_way"] = change["each_way"]
+    if "day_id" in change:
+        body = lucky15(festival["wed"])
+    if "leg_day" in change:
+        body["selections"][3]["day_id"] = festival["wed"]
+    response = member.put(url, json=body)
+    assert response.status_code == 200, response.text
+    assert response.json()["return_pence"] is None

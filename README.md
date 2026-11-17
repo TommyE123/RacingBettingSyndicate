@@ -14,7 +14,10 @@ What exists so far:
 - bet slips: any UK bet type from a single to a Goliath, plus perms, over horses on one or more
   days; the cost is worked out from the bet type and checked against the budget
 - photos of written bet sheets, with the slips entered from each one totalled against it
-- returns declared per slip by the member or an admin; nothing is settled from prices
+- returns declared per slip by the member or an admin; nothing is settled
+  from prices. Changing what was bet (stake, type, each way or a horse's day)
+  clears the return so it is entered again; correcting a name, race time or
+  note keeps it
 - the leaderboard, daily winners, both trophies, and statistics, all worked out from the slips
 - an audit log of every change, recording who made it and when
 
