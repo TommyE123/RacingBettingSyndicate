@@ -10,9 +10,11 @@
     "**/node_modules/**",
     "**/bower_components/**",
     ".github/workflows/issue-triage.lock.yml",
-    "**/.mise/locks/**"
+    "mise.toml",
+    ".devcontainer/package.json"
   ],
   "description": "Dependency-update policy for RacingBettingSyndicate. Renovate creates and maintains dependency PRs. Patch updates are automerged once required checks pass; all other updates require manual review and merge.",
+  "timezone": "Europe/London",
   "internalChecksFilter": "strict",
   "forkProcessing": "enabled",
   "platformAutomerge": false,
@@ -21,11 +23,66 @@
   "semanticCommitType": "chore",
   "prConcurrentLimit": 15,
   "prHourlyLimit": 5,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["* 0-3 * * 6"],
+    "automerge": false
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track the Python version Pyright checks against (pythonVersion in pyrightconfig.json), so it moves with the other Python runtime pins.",
+      "managerFilePatterns": ["/^pyrightconfig\\.json$/"],
+      "matchStrings": [
+        "\"pythonVersion\":\\s*\"(?<currentValue>\\d+\\.\\d+)\""
+      ],
+      "depNameTemplate": "python",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the Python version Ruff targets (target-version in .linter-rules/.ruff.toml, written as py314), so it moves with the other Python runtime pins. The py prefix and the dot are rebuilt around the version Renovate reads and writes.",
+      "managerFilePatterns": ["/^\\.linter-rules/\\.ruff\\.toml$/"],
+      "matchStrings": [
+        "target-version\\s*=\\s*\"py(?<major>\\d)(?<minor>\\d+)\""
+      ],
+      "currentValueTemplate": "{{{major}}}.{{{minor}}}",
+      "autoReplaceStringTemplate": "target-version = \"py{{{replace '\\.' '' newValue}}}\"",
+      "depNameTemplate": "python",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
+  ],
   "packageRules": [
+    {
+      "description": "Update the Node major everywhere in one PR: both FROM lines in frontend/Dockerfile, node-version in tests.yml, and the node feature's version option in devcontainer.json (read by Renovate's built-in devcontainer manager). minimumGroupSize must equal the number of pins (each FROM line counts), so the PR is only created once all of them have an update. The contract test in app/tests/unit/test_dev_stack_files.py checks that they agree. Only major updates are grouped, so digest refreshes are not held back by the minimum. Node majors need a manual merge. The rule matches the dependency name rather than the package name, because the setup-node pin in tests.yml has the package name actions/node-versions while the Dockerfile and Dev Container pins are named node.",
+      "matchDepNames": ["node"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "Node runtime",
+      "minimumGroupSize": 4,
+      "minimumReleaseAge": "7 days"
+    },
     {
       "description": "Keep automerge disabled by default for all dependency updates. A later, narrower rule enables it only for eligible patch updates.",
       "matchPackageNames": ["*"],
       "automerge": false,
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Update the Python version everywhere in one PR: the Dockerfile image, the Dev Container image, pythonVersion in pyrightconfig.json and target-version in .linter-rules/.ruff.toml. minimumGroupSize must equal the number of pins, so the PR is only created once all of them have an update (the Dev Container image can lag a new Python release). The contract test in app/tests/unit/test_dev_stack_files.py checks that they agree. Only major and minor updates are grouped, so routine digest refreshes of the existing tags are not held back by the minimum. Python releases are minor or major updates, so automerge stays disabled. The release age is switched off for this group because the python image tags are floating tags that are rebuilt often, which restarts the seven-day clock, so the pins may never all clear it together and the group would never form. This rule must stay after the general minimumReleaseAge rule above it, because later rules win.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["python", "mcr.microsoft.com/devcontainers/python"],
+      "matchUpdateTypes": ["major", "minor"],
+      "groupName": "Python runtime",
+      "minimumGroupSize": 4,
+      "minimumReleaseAge": null
+    },
+    {
+      "description": "Group Prettier dependency updates across package files into one PR.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["prettier"],
+      "groupName": "Prettier",
       "minimumReleaseAge": "7 days"
     },
     {
@@ -59,6 +116,21 @@
       "pinDigests": true
     },
     {
+      "description": "pythonVersion in pyrightconfig.json and target-version in .linter-rules/.ruff.toml are values that their tools parse, so they must never get a digest appended. Keep this after the general digest pinning rule.",
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["pyrightconfig.json", ".linter-rules/.ruff.toml"],
+      "pinDigests": false
+    },
+    {
+      "description": "Dev Container features and the Dev Container base image are tracked by tag, not by digest, because local tooling floats within its tag. ghcr.io and mcr.microsoft.com give Renovate no release timestamps, so with internalChecksFilter strict their updates would wait in Pending Status Checks forever; timestamp-optional lets them through. This is scoped to the Dev Container files so production images keep the full minimumReleaseAge, except the Python runtime group, which has none. Keep this after the general digest pinning rule.",
+      "matchFileNames": [
+        ".devcontainer/devcontainer.json",
+        ".devcontainer/Dockerfile"
+      ],
+      "pinDigests": false,
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
       "description": "tommye123/racingbettingsyndicate-* are this project's own published images, not third-party dependencies. Renovate should not manage them.",
       "matchDatasources": ["docker"],
       "matchPackageNames": [
@@ -67,6 +139,14 @@
       ],
       "enabled": false,
       "minimumReleaseAge": null
+    },
+    {
+      "description": "Schedule FastAPI updates for Saturdays.",
+      "matchManagers": ["pip_requirements"],
+      "matchPackageNames": ["fastapi"],
+      "minimumReleaseAge": "7 days",
+      "schedule": ["* * * * 6"],
+      "updateNotScheduled": false
     }
   ]
 }

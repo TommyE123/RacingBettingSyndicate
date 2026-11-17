@@ -434,3 +434,9 @@ FodyWeavers.xsd
 # Local backend database
 /data/
 *.sqlite3
+
+# The Dev Container tooling floats with no lockfile, so its lockfiles are never committed.
+.devcontainer/package-lock.json
+.devcontainer/devcontainer-lock.json
+mise.lock
+uv.lock

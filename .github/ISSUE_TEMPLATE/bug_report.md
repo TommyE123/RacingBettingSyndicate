@@ -26,11 +26,13 @@ What actually happened instead?
 
 ## Version
 
-Which version, image tag or commit are you running? (e.g. `latest`, a release version, or a commit SHA)
+Which version, image tag or commit are you running? (e.g. `latest`, a release version, or a commit
+SHA)
 
 ## Relevant logs
 
-Application logs or browser console output around the time of the issue. Please redact any secrets or sensitive information.
+Application logs or browser console output around the time of the issue. Please redact any secrets
+or sensitive information.
 
 ```text
 paste logs here
@@ -38,4 +40,5 @@ paste logs here
 
 ## Additional context (optional)
 
-Anything else that might help, e.g. relevant configuration, browser, or the league/tournament involved. Please redact any secrets or sensitive information.
+Anything else that might help, e.g. relevant configuration, browser, or the league/tournament
+involved. Please redact any secrets or sensitive information.

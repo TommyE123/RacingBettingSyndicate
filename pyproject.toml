@@ -10,4 +10,4 @@ do_not_mutate = ["app/tests/*"]
 
 # Tests that read repository files (workflows, scripts) via parents[N] cannot run inside
 # mutants/. Add their paths here as `--ignore=...` entries if such tests are written.
-pytest_add_cli_args_test_selection = []
+pytest_add_cli_args_test_selection = ["--ignore=app/tests/unit/test_dev_stack_files.py"]

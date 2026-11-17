@@ -5,9 +5,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 bash .devcontainer/prepare-volumes.sh
 
-# Switch to `mise install --locked` once a lockfile has been generated with
-# `mise lock --platform linux-x64` (see mise.toml).
+# Tools float to the latest release with no lockfile. `install` fetches anything missing;
+# `upgrade` moves tools already installed on the persisted volume to the newest release.
 mise install
+mise upgrade --yes
 # Only mise's tool installs grow without bound (each version bump leaves the old
 # install behind); prune is a no-op when nothing is superseded.
 mise prune --yes || echo "Warning: mise prune failed; superseded tool versions were kept"
@@ -27,4 +28,7 @@ if [ -f frontend/pnpm-lock.yaml ]; then
 elif [ -f frontend/package-lock.json ]; then
   npm ci --prefer-offline --no-audit --prefix frontend
 fi
-npm ci --prefer-offline --ignore-scripts --no-audit --prefix .devcontainer
+# The Dev Container linters float with no lockfile (see .devcontainer/package.json).
+npm install --no-package-lock --ignore-scripts --no-audit --prefix .devcontainer
+# `install` leaves packages already in the workspace's node_modules alone, so update them too.
+npm update --no-package-lock --ignore-scripts --no-audit --prefix .devcontainer

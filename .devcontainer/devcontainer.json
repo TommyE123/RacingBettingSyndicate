@@ -3,7 +3,8 @@
   "runArgs": ["--name", "racingbettingsyndicate-devcontainer"],
   "privileged": true,
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "options": ["--pull"]
   },
 
   "features": {
