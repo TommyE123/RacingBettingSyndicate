@@ -7,7 +7,9 @@ import type { TextFieldProps } from '@mui/material/TextField';
 
 import { parsePounds } from '@/lib/money';
 
-export type MoneyFieldProps = Omit<TextFieldProps, 'onChange' | 'value'> & {
+// The input slots are fixed here (the £ sign and a decimal keypad), so callers cannot
+// pass slot settings that would otherwise be silently replaced.
+export type MoneyFieldProps = Omit<TextFieldProps, 'onChange' | 'value' | 'slotProps'> & {
   value: string;
   onChange: (text: string, pence: number | null) => void;
   allowEmpty?: boolean;
@@ -27,7 +29,6 @@ export function MoneyField({ value, onChange, allowEmpty = true, helperText, ...
         onChange(event.target.value, parsePounds(event.target.value));
       }}
       slotProps={{
-        ...props.slotProps,
         input: { startAdornment: <InputAdornment position="start">£</InputAdornment> },
         htmlInput: { inputMode: 'decimal', autoComplete: 'off' },
       }}

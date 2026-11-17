@@ -86,9 +86,9 @@ function CompetitionDetailPage(): React.JSX.Element {
       await action();
       setFresh(await api<CompetitionDetail>(`/api/competitions/${id}`));
       notify(message);
-      if (shown?.id === data.id) {
-        await refresh();
-      }
+      // Reload the competition list (and the selected competition) after every change,
+      // so the picker shows new names and budgets even for one that is not selected.
+      await refresh();
       return true;
     } catch (error) {
       notify(errorMessage(error), 'error');

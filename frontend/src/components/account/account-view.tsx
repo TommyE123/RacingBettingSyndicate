@@ -103,6 +103,7 @@ export function AccountView(): React.JSX.Element {
                     onChange={(event) => {
                       setCurrent(event.target.value);
                     }}
+                    disabled={busy}
                     type="password"
                     value={current}
                   />
@@ -114,6 +115,7 @@ export function AccountView(): React.JSX.Element {
                     onChange={(event) => {
                       setNext(event.target.value);
                     }}
+                    disabled={busy}
                     type="password"
                     value={next}
                   />
@@ -125,6 +127,7 @@ export function AccountView(): React.JSX.Element {
                     onChange={(event) => {
                       setRepeat(event.target.value);
                     }}
+                    disabled={busy}
                     type="password"
                     value={repeat}
                   />

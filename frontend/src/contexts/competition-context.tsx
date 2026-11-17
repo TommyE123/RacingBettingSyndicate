@@ -48,13 +48,15 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
   const [competitions, setCompetitions] = React.useState<CompetitionSummary[]>([]);
   const [competition, setCompetition] = React.useState<CompetitionDetail | null>(null);
   const [betTypes, setBetTypes] = React.useState<BetType[]>([]);
-  const [selectedId, setSelectedId] = React.useState<number | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [version, setVersion] = React.useState(0);
   // Each load gets a number; only the latest may update state, so a slow earlier load
   // can never replace the competition chosen after it.
   const latestLoad = React.useRef(0);
+  // The competition most recently chosen, read when refreshing so a refresh started
+  // before a newer choice reloads that newer choice, not the one it captured.
+  const chosenId = React.useRef<number | null>(null);
 
   const load = React.useCallback(
     async (preferredId: number | null): Promise<void> => {
@@ -79,13 +81,13 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
         const chosen =
           list.find((item) => item.id === wanted) ?? list.find((item) => item.entered) ?? list[0] ?? null;
         if (chosen) {
-          setSelectedId(chosen.id);
+          chosenId.current = chosen.id;
           const detail = await api<CompetitionDetail>(`/api/competitions/${chosen.id}`);
           if (isCurrent()) {
             setCompetition(detail);
           }
         } else {
-          setSelectedId(null);
+          chosenId.current = null;
           setCompetition(null);
         }
       } catch (error_) {
@@ -109,6 +111,7 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
 
   const select = React.useCallback(
     (id: number) => {
+      chosenId.current = id;
       storeId(id);
       setIsLoading(true);
       load(id).catch(() => {
@@ -119,9 +122,9 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
   );
 
   const refresh = React.useCallback(async () => {
-    await load(selectedId);
+    await load(chosenId.current);
     setVersion((value) => value + 1);
-  }, [load, selectedId]);
+  }, [load]);
 
   const bump = React.useCallback(() => {
     setVersion((value) => value + 1);

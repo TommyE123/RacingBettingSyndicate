@@ -43,7 +43,7 @@ function csvText(value: string): string {
 
 function csvCell(value: string | number): string {
   const text = String(value);
-  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
 function exportCsv(slips: Slip[], competition: CompetitionDetail, dayLabel: (id: number) => string): void {

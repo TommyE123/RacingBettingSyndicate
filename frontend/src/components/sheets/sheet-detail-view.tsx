@@ -198,6 +198,7 @@ export function SheetDetailView(): React.JSX.Element {
                 action={
                   manage ? (
                     <Button
+                      disabled={busy}
                       onClick={() => {
                         if (editOpen) {
                           setEditing(false);
@@ -217,6 +218,7 @@ export function SheetDetailView(): React.JSX.Element {
                 {editOpen ? (
                   <Stack spacing={2}>
                     <TextField
+                      disabled={busy}
                       label="Day"
                       onChange={(event) => {
                         setDayId(Number(event.target.value));
@@ -231,6 +233,7 @@ export function SheetDetailView(): React.JSX.Element {
                       ))}
                     </TextField>
                     <MoneyField
+                      disabled={busy}
                       helperText="Leave empty if the sheet has no total"
                       label="Total written on the sheet"
                       onChange={(text) => {
@@ -239,6 +242,7 @@ export function SheetDetailView(): React.JSX.Element {
                       value={totalText}
                     />
                     <TextField
+                      disabled={busy}
                       label="Note"
                       onChange={(event) => {
                         setNote(event.target.value);

@@ -65,6 +65,8 @@ function Users(): React.JSX.Element {
   const { user: me, checkSession } = useUser();
   const { competition, refresh } = useCompetition();
   const [editing, setEditing] = React.useState<ApiUser | 'new' | null>(null);
+  // A new or reset password stays on screen until the admin has passed it on.
+  const [handover, setHandover] = React.useState<{ name: string; password: string } | null>(null);
   const notify = useNotify();
 
   const entered = new Set((competition?.entrants ?? []).map((entrant) => entrant.user_id));
@@ -150,8 +152,11 @@ function Users(): React.JSX.Element {
         onClose={() => {
           setEditing(null);
         }}
-        onSaved={(saved, enter) => {
+        onSaved={(saved, enter, password) => {
           setEditing(null);
+          if (password) {
+            setHandover({ name: saved.display_name, password });
+          }
           users.reload();
           const after = async (): Promise<void> => {
             if (enter && competition) {
@@ -175,6 +180,33 @@ function Users(): React.JSX.Element {
         }}
         target={editing}
       />
+      <Dialog fullWidth maxWidth="xs" open={handover !== null}>
+        <DialogTitle>Password for {handover?.name}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
+            <Typography>Pass this on to them. They can change it under My account.</Typography>
+            <Typography
+              component="p"
+              sx={{ fontFamily: 'monospace', fontSize: '1.5rem', overflowWrap: 'anywhere', textAlign: 'center' }}
+            >
+              {handover?.password}
+            </Typography>
+            <Typography color="text.secondary" variant="body2">
+              It is not shown again after you close this.
+            </Typography>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setHandover(null);
+            }}
+            variant="contained"
+          >
+            Done
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }
@@ -188,7 +220,7 @@ function UserDialog({
   target: ApiUser | 'new' | null;
   competitionName?: string;
   onClose: () => void;
-  onSaved: (user: ApiUser, enter: boolean) => void;
+  onSaved: (user: ApiUser, enter: boolean, password: string | null) => void;
 }): React.JSX.Element {
   const notify = useNotify();
   const isNew = target === 'new';
@@ -222,7 +254,7 @@ function UserDialog({
           method: 'POST',
           json: { username, display_name: displayName, password, role },
         });
-        notify(`${saved.display_name} added. Their password is ${password}`, 'info');
+        notify(`${saved.display_name} added`);
       } else if (existing) {
         const changes: Record<string, unknown> = {};
         if (displayName !== existing.display_name) {
@@ -238,11 +270,11 @@ function UserDialog({
           changes.password = password;
         }
         saved = await api<ApiUser>(`/api/admin/users/${existing.id}`, { method: 'PATCH', json: changes });
-        notify(password ? `Saved. ${saved.display_name}'s new password is ${password}` : 'Saved', password ? 'info' : 'success');
+        notify('Saved');
       } else {
         return;
       }
-      onSaved(saved, isNew && enter);
+      onSaved(saved, isNew && enter, password || null);
     } catch (error_) {
       setError(errorMessage(error_));
     } finally {

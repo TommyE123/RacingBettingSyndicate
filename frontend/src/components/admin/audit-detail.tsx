@@ -66,7 +66,15 @@ function show(key: string, value: unknown, dayLabel: (id: number) => string): st
     return value ? 'yes' : 'no';
   }
   if (key === 'selections' && Array.isArray(value)) {
-    return (value as unknown[][]).map((leg) => `${String(leg[1])} ${String(leg[2])}`).join(', ');
+    // Each leg is recorded as [day_id, race_time, horse_name, note].
+    return (value as unknown[][])
+      .map((leg) => {
+        const [day, time, horse, note] = leg;
+        const when = typeof day === 'number' ? `${dayLabel(day)} ` : '';
+        const extra = typeof note === 'string' && note ? ` (${note})` : '';
+        return `${when}${String(time)} ${String(horse)}${extra}`;
+      })
+      .join(', ');
   }
   if (typeof value === 'object') {
     return JSON.stringify(value);

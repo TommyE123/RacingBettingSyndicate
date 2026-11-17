@@ -12,10 +12,18 @@ import { TrophyIcon } from '@phosphor-icons/react/dist/ssr/Trophy';
 import { formatPence } from '@/lib/money';
 import { useCompetition } from '@/contexts/competition-context';
 import { PageHeader } from '@/components/common/page-header';
+import { ErrorAlert, Loading } from '@/components/common/states';
 
 export function RulesView(): React.JSX.Element {
-  const { competition } = useCompetition();
-  const budget = formatPence(competition?.budget_pence ?? 50_000).replace('.00', '');
+  const { competition, isLoading, error } = useCompetition();
+  if (isLoading && !competition) {
+    return <Loading />;
+  }
+  if (error && !competition) {
+    return <ErrorAlert message={error} />;
+  }
+  // Never guess an amount: with no competition, name the budget without a figure.
+  const budget = competition ? formatPence(competition.budget_pence).replace('.00', '') : 'the budget';
 
   return (
     <Stack spacing={3} sx={{ maxWidth: 820 }}>
@@ -27,7 +35,7 @@ export function RulesView(): React.JSX.Element {
               Every participant has a total of <strong>{budget}</strong> to bet at the festival: no more, no less.
             </Typography>
             <Typography component="li">
-              Place your money however you see fit. One {budget} bet is fine. Thousands of different bets is fine too
+              Place your money however you see fit. One {competition ? budget : 'single'} bet is fine. Thousands of different bets is fine too
               (Maurizio, take note).
             </Typography>
             <Typography component="li">

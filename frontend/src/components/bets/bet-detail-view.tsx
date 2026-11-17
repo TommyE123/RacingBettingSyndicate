@@ -49,6 +49,16 @@ export function BetDetailView(): React.JSX.Element {
   const [voiding, setVoiding] = React.useState<Slip | null>(null);
   const [restoreWarning, setRestoreWarning] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const editable = slip.data
+    ? canManage(slip.data, user?.id, isAdmin) && dayById(slip.data.day_id) !== undefined
+    : false;
+
+  // Switching to another competition closes the editor, so it never comes back stale.
+  React.useEffect(() => {
+    if (!editable) {
+      setEditing(false);
+    }
+  }, [editable]);
 
   if (slip.isLoading && !slip.data) {
     return <Loading />;
@@ -170,7 +180,7 @@ export function BetDetailView(): React.JSX.Element {
         <Alert severity="error">{bet.display_name} has staked more than the budget, so this is flagged.</Alert>
       ) : null}
 
-      {editing && !isVoid ? (
+      {editing && manage && !isVoid ? (
         <SlipForm
           onCancel={() => {
             setEditing(false);
@@ -224,7 +234,9 @@ export function BetDetailView(): React.JSX.Element {
       <Card>
         <CardHeader subheader="Every change to this bet, who made it and when." title="History" />
         <CardContent sx={{ pt: 0 }}>
-          {history.data && history.data.length > 0 ? (
+          {history.error ? (
+            <ErrorAlert message={history.error} onRetry={history.reload} />
+          ) : history.data && history.data.length > 0 ? (
             <Stack spacing={2}>
               {history.data.map((entry) => (
                 <Box key={entry.id} sx={{ borderLeft: '3px solid var(--mui-palette-divider)', pl: 2 }}>

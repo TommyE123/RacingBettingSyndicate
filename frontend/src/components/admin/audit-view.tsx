@@ -84,6 +84,11 @@ function Audit(): React.JSX.Element {
       const thisRequest = latest.current;
       setBusy(true);
       setError(null);
+      if (before === null) {
+        // A new filter starts a new table: never keep, or page on from, the previous one.
+        setRows([]);
+        setDone(true);
+      }
       try {
         const page = await api<AuditEntry[]>(
           withQuery('/api/admin/audit', {

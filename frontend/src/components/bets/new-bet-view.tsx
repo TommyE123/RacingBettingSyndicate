@@ -24,6 +24,7 @@ import { useApi } from '@/hooks/use-api';
 import { useUser } from '@/hooks/use-user';
 import { PageHeader } from '@/components/common/page-header';
 import { RequireCompetition } from '@/components/common/require-competition';
+import { ErrorAlert, Loading } from '@/components/common/states';
 import { SheetTotals } from '@/components/sheets/sheet-totals';
 
 import { SlipForm } from './slip-form';
@@ -65,6 +66,24 @@ function NewBet({ competition }: { competition: CompetitionDetail }): React.JSX.
         )}
       </Alert>
     );
+  }
+
+  if (sheetId) {
+    // Wait for the sheet before showing its form, so nothing typed is lost when it arrives.
+    if (sheet.isLoading && !sheet.data) {
+      return <Loading />;
+    }
+    if (sheet.error || !sheet.data) {
+      return <ErrorAlert message={sheet.error ?? 'Sheet not found'} onRetry={sheet.reload} />;
+    }
+    if (dayById(sheet.data.day_id) === undefined) {
+      return (
+        <Alert severity="info">
+          This sheet belongs to another competition. Switch to it in the competition picker to enter its
+          bets.
+        </Alert>
+      );
+    }
   }
 
   const owner = sheet.data?.user_id ?? null;

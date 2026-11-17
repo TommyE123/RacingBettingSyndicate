@@ -76,6 +76,15 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  // The page remounts when the competition changes, so an upload that finishes after that
+  // (or after leaving the page) must not navigate anywhere.
+  const mounted = React.useRef(true);
+  React.useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   React.useEffect(() => {
     if (!file) {
@@ -118,8 +127,12 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
         }),
         { method: 'POST', body: file, headers: { 'Content-Type': file.type || 'application/octet-stream' } }
       );
-      notify('Sheet uploaded. Now enter the bets on it.');
       bump();
+      if (!mounted.current) {
+        notify('Sheet uploaded.');
+        return;
+      }
+      notify('Sheet uploaded. Now enter the bets on it.');
       setFile(null);
       setTotalText('');
       setNote('');

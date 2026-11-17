@@ -44,13 +44,20 @@ function Returns({ competition }: { competition: CompetitionDetail }): React.JSX
   const slips = useApi<Slip[]>(who === '' ? null : `/api/competitions/${competition.id}/slips?user_id=${who}`, [
     version,
   ]);
+  // Returns saved on this page, applied straight away so a row never waits on a reload.
+  // A fresh load replaces them.
+  const [savedHere, setSavedHere] = React.useState<Map<number, Slip>>(new Map());
+  React.useEffect(() => {
+    setSavedHere(new Map());
+  }, [slips.data]);
 
   if (!isEntered && !isAdmin) {
     return <Alert severity="info">You are not entered in {competition.name}.</Alert>;
   }
 
-  const due = (slips.data ?? []).filter((slip) => slip.return_pence === null);
-  const done = (slips.data ?? []).filter((slip) => slip.return_pence !== null);
+  const shown = (slips.data ?? []).map((slip) => savedHere.get(slip.id) ?? slip);
+  const due = shown.filter((slip) => slip.return_pence === null);
+  const done = shown.filter((slip) => slip.return_pence !== null);
   const byDay = new Map<number, Slip[]>();
   for (const slip of due) {
     byDay.set(slip.settle_day_id, [...(byDay.get(slip.settle_day_id) ?? []), slip]);
@@ -106,7 +113,13 @@ function Returns({ competition }: { competition: CompetitionDetail }): React.JSX
           <Divider />
           <Stack divider={<Divider />}>
             {(byDay.get(day.id) ?? []).map((slip) => (
-              <ReturnRow key={slip.id} slip={slip} />
+              <ReturnRow
+                key={slip.id}
+                onSaved={(updated) => {
+                  setSavedHere((current) => new Map(current).set(updated.id, updated));
+                }}
+                slip={slip}
+              />
             ))}
           </Stack>
         </Card>
@@ -126,7 +139,7 @@ function Returns({ competition }: { competition: CompetitionDetail }): React.JSX
   );
 }
 
-function ReturnRow({ slip }: { slip: Slip }): React.JSX.Element {
+function ReturnRow({ slip, onSaved }: { slip: Slip; onSaved: (slip: Slip) => void }): React.JSX.Element {
   const notify = useNotify();
   const { bump } = useCompetition();
   const [text, setText] = React.useState('');
@@ -136,8 +149,12 @@ function ReturnRow({ slip }: { slip: Slip }): React.JSX.Element {
   const save = async (value: number): Promise<void> => {
     setBusy(true);
     try {
-      await api(`/api/slips/${slip.id}/return`, { method: 'PUT', json: { return_pence: value } });
+      const updated = await api<Slip>(`/api/slips/${slip.id}/return`, {
+        method: 'PUT',
+        json: { return_pence: value },
+      });
       notify(`${betHeadline(slip)}: ${value ? `${formatPence(value)} back` : 'lost'}`);
+      onSaved(updated);
       bump();
     } catch (error) {
       notify(errorMessage(error), 'error');
