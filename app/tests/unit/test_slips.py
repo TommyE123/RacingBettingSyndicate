@@ -328,3 +328,28 @@ def test_an_absurd_total_stake_is_refused(member, festival):
     response = post_slip(member, festival, body)
     assert response.status_code == 422
     assert "too large" in response.text
+
+
+def test_a_horse_cannot_run_before_the_day_the_bet_was_placed(member, festival):
+    body = lucky15(festival["wed"])
+    body["selections"][2]["day_id"] = festival["tue"]
+    response = post_slip(member, festival, body)
+    assert response.status_code == 422
+    assert "Horse 3: that race is before the day the bet was placed" in response.text
+    # A later day is fine: placed Tuesday, last leg Wednesday.
+    body = lucky15(festival["tue"])
+    body["selections"][3]["day_id"] = festival["wed"]
+    assert post_slip(member, festival, body).status_code == 201
+
+
+def test_history_returns_the_latest_changes_and_pages_back(member, festival):
+    slip = post_slip(member, festival, lucky15(festival["tue"])).json()
+    url = f"/api/slips/{slip['id']}"
+    for pence in (100, 200, 300, 400):
+        assert member.put(f"{url}/return", json={"return_pence": pence}).status_code == 200
+    every = member.get(f"{url}/history").json()
+    assert len(every) == 5
+    latest = member.get(f"{url}/history", params={"limit": 2}).json()
+    assert [row["id"] for row in latest] == [row["id"] for row in every[-2:]]
+    earlier = member.get(f"{url}/history", params={"limit": 2, "before_id": latest[0]["id"]}).json()
+    assert [row["id"] for row in earlier] == [row["id"] for row in every[-4:-2]]

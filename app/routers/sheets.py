@@ -232,12 +232,17 @@ def get_sheet(sheet_id: int, _user: CurrentUser, db: DbSession) -> SheetOut:
 def sheet_image(sheet_id: int, request: Request, _user: CurrentUser, db: DbSession) -> FileResponse:
     sheet = sheet_or_404(db, sheet_id)
     path = upload_dir(request) / sheet.filename
+    content_type = sheet.content_type
+    # The file is streamed after this returns, so end the transaction (and its write lock)
+    # now rather than holding it while a slow phone downloads the photo.
+    db.rollback()
     if not path.is_file():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "The photo file is missing")
     return FileResponse(
         path,
-        media_type=sheet.content_type,
-        headers={"Cache-Control": "private, max-age=86400", "X-Content-Type-Options": "nosniff"},
+        media_type=content_type,
+        # Sheet ids can be reused after a delete, so a browser must check before reusing a copy.
+        headers={"Cache-Control": "private, no-cache", "X-Content-Type-Options": "nosniff"},
     )
 
 

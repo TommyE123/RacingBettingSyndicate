@@ -229,3 +229,21 @@ def test_upload_is_checked_again_once_the_photo_arrives(app, member, festival, m
     monkeypatch.setattr(sheets_router, "_read_photo", read_then_withdraw)
     assert upload(member, festival).status_code == 409
     assert calls == [len(JPEG)]
+
+
+def test_photo_sent_after_transaction_and_revalidated(app, member, festival, monkeypatch):  # noqa: F811
+    sheet = upload(member, festival).json()
+    real = sheets_router.FileResponse
+
+    def respond_after_a_write(*args, **kwargs):
+        # The test database is one shared connection, so this write only works if the
+        # request's own transaction has already ended.
+        with Session(app.state.engine) as db:
+            db.execute(delete(Entry).where(Entry.id == -1))
+            db.commit()
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(sheets_router, "FileResponse", respond_after_a_write)
+    response = member.get(f"/api/sheets/{sheet['id']}/image")
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "private, no-cache"

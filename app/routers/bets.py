@@ -45,6 +45,7 @@ from app.schemas import (
 )
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import Iterable
 
     from sqlalchemy.orm import Session
@@ -180,22 +181,31 @@ def _unprocessable(message: str) -> HTTPException:
     return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, message)
 
 
-def _day_ids(db: Session, competition_id: int) -> set[int]:
-    return set(
-        db.scalars(select(CompetitionDay.id).where(CompetitionDay.competition_id == competition_id))
+def _day_dates(db: Session, competition_id: int) -> dict[int, dt.date]:
+    rows = db.execute(
+        select(CompetitionDay.id, CompetitionDay.date).where(
+            CompetitionDay.competition_id == competition_id
+        )
     )
+    return dict(rows.all())
 
 
 def apply_slip(db: Session, slip: Slip, body: SlipIn, competition: Competition) -> None:
     """Validate the body and write it onto the slip, replacing its selections."""
-    valid_days = _day_ids(db, competition.id)
-    if body.day_id not in valid_days:
+    day_dates = _day_dates(db, competition.id)
+    if body.day_id not in day_dates:
         raise _unprocessable("That day is not part of this competition")
+    placed_on = day_dates[body.day_id]
     selections = []
     try:
         for position, item in enumerate(body.selections, start=1):
-            if item.day_id not in valid_days:
+            if item.day_id not in day_dates:
                 raise _unprocessable(f"Horse {position}: that day is not part of this competition")
+            # A bet is placed before its races, so no horse can run on an earlier day.
+            if day_dates[item.day_id] < placed_on:
+                raise _unprocessable(
+                    f"Horse {position}: that race is before the day the bet was placed"
+                )
             selections.append(
                 SlipSelection(
                     position=position,
@@ -448,12 +458,13 @@ def slip_history(
     _user: CurrentUser,
     db: DbSession,
     limit: Annotated[int, Query(ge=1, le=500)] = 200,
+    before_id: int | None = None,
 ) -> list[AuditOut]:
+    """The latest changes, oldest first; pass the first id as `before_id` for earlier ones."""
     load_slip(db, slip_id)
-    rows = db.scalars(
-        select(AuditLog)
-        .where(AuditLog.entity_type == "slip", AuditLog.entity_id == slip_id)
-        .order_by(AuditLog.id)
-        .limit(limit)
-    )
-    return audit_out(db, list(rows))
+    query = select(AuditLog).where(AuditLog.entity_type == "slip", AuditLog.entity_id == slip_id)
+    if before_id is not None:
+        query = query.where(AuditLog.id < before_id)
+    rows = list(db.scalars(query.order_by(AuditLog.id.desc()).limit(limit)))
+    rows.reverse()
+    return audit_out(db, rows)
