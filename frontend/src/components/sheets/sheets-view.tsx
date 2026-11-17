@@ -61,7 +61,7 @@ export function TotalsChip({ sheet }: { sheet: Sheet }): React.JSX.Element {
 
 function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.Element {
   const { user, isAdmin } = useUser();
-  const { version, isEntered, dayById, bump } = useCompetition();
+  const { version, isEntered, dayById, bump, latestChoice } = useCompetition();
   const notify = useNotify();
   const router = useRouter();
   const sheets = useApi<Sheet[]>(`/api/competitions/${competition.id}/sheets`, [version]);
@@ -128,7 +128,9 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
         { method: 'POST', body: file, headers: { 'Content-Type': file.type || 'application/octet-stream' } }
       );
       bump();
-      if (!mounted.current) {
+      // Navigate only if this page is still open and its competition is still the one
+      // chosen: another may have been picked and still be loading.
+      if (!mounted.current || latestChoice() !== competition.id) {
         notify('Sheet uploaded.');
         return;
       }

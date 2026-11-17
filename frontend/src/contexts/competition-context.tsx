@@ -16,6 +16,9 @@ export interface CompetitionContextValue {
   error: string | null;
   select: (id: number) => void;
   refresh: () => Promise<void>;
+  // The competition most recently chosen, even while its details are still loading.
+  // Work that finishes later checks this before acting on the competition it started in.
+  latestChoice: () => number | null;
   // Bumped whenever bets change, so pages can reload what they show.
   version: number;
   bump: () => void;
@@ -130,6 +133,8 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
     setVersion((value) => value + 1);
   }, []);
 
+  const latestChoice = React.useCallback(() => chosenId.current, []);
+
   const value = React.useMemo<CompetitionContextValue>(() => {
     const days = new Map((competition?.days ?? []).map((day) => [day.id, day]));
     const names = new Map((competition?.entrants ?? []).map((entrant) => [entrant.user_id, entrant.display_name]));
@@ -141,13 +146,14 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
       error,
       select,
       refresh,
+      latestChoice,
       version,
       bump,
       dayById: (id: number) => days.get(id),
       nameOf: (userId: number) => names.get(userId) ?? (userId === user?.id ? user.display_name : `#${userId}`),
       isEntered: Boolean(user && competition?.entrants.some((entrant) => entrant.user_id === user.id)),
     };
-  }, [competitions, competition, betTypes, isLoading, error, select, refresh, version, bump, user]);
+  }, [competitions, competition, betTypes, isLoading, error, select, refresh, latestChoice, version, bump, user]);
 
   return <CompetitionContext.Provider value={value}>{children}</CompetitionContext.Provider>;
 }
