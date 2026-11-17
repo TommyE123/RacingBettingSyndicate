@@ -31,8 +31,9 @@ DISABLE_LINTERS:
   - REPOSITORY_SYFT
 
 # Report-only linters (run and report, but never fail the build). ACTION_ZIZMOR runs the
-# auditor persona and stays report-only until its findings are cleared (#57). Making the
-# frontend linters blocking is tracked in #6, and Trivy in #5.
+# auditor persona and stays report-only while findings remain: the main-only workflows'
+# secrets need GitHub Environments. Making the frontend linters blocking is tracked in #6,
+# and Trivy in #5.
 DISABLE_ERRORS_LINTERS:
   - ACTION_ZIZMOR
   - CSS_STYLELINT

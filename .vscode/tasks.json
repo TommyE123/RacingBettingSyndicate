@@ -314,12 +314,6 @@
       "problemMatcher": []
     },
     {
-      "label": "RBS: Run OSV Scanner",
-      "type": "shell",
-      "command": "mkdir -p .lint && osv-scanner scan source -r . --format json --output-file .lint/osv.json",
-      "problemMatcher": []
-    },
-    {
       "label": "RBS: Run Trivy",
       "type": "shell",
       "command": "trivy fs --config .linter-rules/.trivy.yaml --scanners vuln,misconfig,secret --skip-dirs '.lint' .",
@@ -348,7 +342,6 @@
       "dependsOrder": "parallel",
       "dependsOn": [
         "RBS: Run Semgrep",
-        "RBS: Run OSV Scanner",
         "RBS: Run Trivy",
         "RBS: Run TruffleHog",
         "RBS: Run Betterleaks"
