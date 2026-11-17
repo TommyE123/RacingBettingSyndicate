@@ -9,10 +9,10 @@ export interface SignInParams {
 }
 
 class AuthClient {
-  async signIn(params: SignInParams): Promise<{ error?: string }> {
+  // The login response is the signed-in user, so callers need no second request to know it.
+  async signIn(params: SignInParams): Promise<{ user?: ApiUser; error?: string }> {
     try {
-      await api<ApiUser>('/api/auth/login', { method: 'POST', json: params });
-      return {};
+      return { user: await api<ApiUser>('/api/auth/login', { method: 'POST', json: params }) };
     } catch (error) {
       return { error: errorMessage(error) };
     }

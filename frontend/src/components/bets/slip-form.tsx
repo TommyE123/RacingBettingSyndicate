@@ -256,6 +256,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                 {isAdmin && !editing ? (
                   <Grid size={{ xs: 12, md: 4 }}>
                     <TextField
+                      disabled={busy}
                       fullWidth
                       helperText={owner !== user?.id && ownerName ? `Entering for ${ownerName}` : 'Admins can enter for anyone'}
                       label="Whose bet"
@@ -276,6 +277,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                 ) : null}
                 <Grid size={{ xs: 12, md: isAdmin && !editing ? 4 : 6 }}>
                   <TextField
+                    disabled={busy}
                     error={showErrors && dayId === ''}
                     fullWidth
                     helperText="The day you placed it; the stake comes off your budget here"
@@ -299,6 +301,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                 </Grid>
                 <Grid size={{ xs: 12, md: isAdmin && !editing ? 4 : 6 }}>
                   <TextField
+                    disabled={busy}
                     fullWidth
                     helperText={betType?.description}
                     label="Bet type"
@@ -331,6 +334,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                 {betTypeKey === 'perm' ? (
                   <Grid size={{ xs: 12, md: 4 }}>
                     <TextField
+                      disabled={busy}
                       error={showErrors && !foldSize}
                       fullWidth
                       helperText="Every combination of this size"
@@ -354,6 +358,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                   <FormControlLabel
                     control={
                       <Switch
+                        disabled={busy}
                         checked={eachWay}
                         onChange={(event) => {
                           setEachWay(event.target.checked);
@@ -380,6 +385,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                   </Typography>
                 </Typography>
                 <Button
+                  disabled={busy}
                   onClick={() => {
                     setPasteOpen(true);
                   }}
@@ -396,6 +402,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                     <Grid container spacing={1.5} sx={{ alignItems: 'flex-start' }}>
                       <Grid size={{ xs: 12, sm: 3, md: 2.5 }}>
                         <TextField
+                          disabled={busy}
                           error={rowProblem === 'Choose the day'}
                           fullWidth
                           label={`Day (horse ${index + 1})`}
@@ -415,6 +422,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                       </Grid>
                       <Grid size={{ xs: 4, sm: 2, md: 1.5 }}>
                         <TextField
+                          disabled={busy}
                           error={rowProblem === 'Enter the race time' || rowProblem === 'Write the time like 2:10'}
                           fullWidth
                           label="Time"
@@ -429,6 +437,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                       </Grid>
                       <Grid size={{ xs: 8, sm: 4, md: 4.5 }}>
                         <TextField
+                          disabled={busy}
                           error={rowProblem === 'Enter the horse'}
                           fullWidth
                           label="Horse"
@@ -442,6 +451,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                       </Grid>
                       <Grid size={{ xs: 10, sm: 2.5, md: 3 }}>
                         <TextField
+                          disabled={busy}
                           fullWidth
                           label="Note"
                           onChange={(event) => {
@@ -457,7 +467,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                           <span>
                             <IconButton
                               aria-label={`Remove horse ${index + 1}`}
-                              disabled={rows.length === 1}
+                              disabled={busy || rows.length === 1}
                               onClick={() => {
                                 removeRow(row.key);
                               }}
@@ -477,7 +487,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                 );
               })}
               <div>
-                <Button onClick={addRow} startIcon={<PlusIcon />} variant="outlined">
+                <Button disabled={busy} onClick={addRow} startIcon={<PlusIcon />} variant="outlined">
                   Add a horse
                 </Button>
               </div>
@@ -492,6 +502,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
               <Typography variant="h6">Stake</Typography>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'flex-start' } }}>
                 <ToggleButtonGroup
+                  disabled={busy}
                   exclusive
                   onChange={(_, value: 'unit' | 'total' | null) => {
                     if (value && value !== stakeMode) {
@@ -511,6 +522,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                   <ToggleButton value="total">Total</ToggleButton>
                 </ToggleButtonGroup>
                 <MoneyField
+                  disabled={busy}
                   error={showErrors && (unitPence === null || Boolean(stakeProblem))}
                   helperText={stakeMode === 'unit' ? 'As written: £1 e/w Lucky 15 is 1' : 'The total circled on the sheet'}
                   label={stakeMode === 'unit' ? 'Stake per bet' : 'Total stake'}
@@ -564,6 +576,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                 </Alert>
               ) : null}
               <TextField
+                disabled={busy}
                 fullWidth
                 label="Note (optional)"
                 multiline

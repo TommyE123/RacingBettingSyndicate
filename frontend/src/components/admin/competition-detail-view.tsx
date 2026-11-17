@@ -54,6 +54,9 @@ function CompetitionDetailPage(): React.JSX.Element {
   const detail = useApi<CompetitionDetail>(`/api/competitions/${id}`);
   // The latest copy fetched after a change, so controls show it before re-enabling.
   const [fresh, setFresh] = React.useState<CompetitionDetail | null>(null);
+  // Set when a change saved but re-reading the competition failed: the controls stay locked,
+  // as they may show the old state, until a retry of the read (never of the change) works.
+  const [stale, setStale] = React.useState<string | null>(null);
   const users = useApi<ApiUser[]>('/api/admin/users');
   const [name, setName] = React.useState('');
   const [budget, setBudget] = React.useState('');
@@ -80,23 +83,35 @@ function CompetitionDetailPage(): React.JSX.Element {
 
   // Runs a change, then waits for the competition's fresh data before re-enabling the
   // controls, so a quick second click acts on what is really there. True if it worked.
+  const reread = async (): Promise<void> => {
+    try {
+      setFresh(await api<CompetitionDetail>(`/api/competitions/${id}`));
+      setStale(null);
+    } catch (error) {
+      setStale(errorMessage(error));
+    }
+  };
+
   const run = async (action: () => Promise<unknown>, message: string): Promise<boolean> => {
     setBusy(true);
     try {
-      await action();
-      setFresh(await api<CompetitionDetail>(`/api/competitions/${id}`));
+      try {
+        await action();
+      } catch (error) {
+        notify(errorMessage(error), 'error');
+        return false;
+      }
       notify(message);
+      await reread();
       // Reload the competition list (and the selected competition) after every change,
       // so the picker shows new names and budgets even for one that is not selected.
       await refresh();
       return true;
-    } catch (error) {
-      notify(errorMessage(error), 'error');
-      return false;
     } finally {
       setBusy(false);
     }
   };
+  const locked = busy || stale !== null;
 
   const saveDetails = (): void => {
     const pence = parsePounds(budget);
@@ -179,6 +194,21 @@ function CompetitionDetailPage(): React.JSX.Element {
           </Button>
         )}
       </Stack>
+      {stale ? (
+        <ErrorAlert
+          message={`Saved, but the competition could not be reloaded (${stale}). Reload it before changing anything else.`}
+          onRetry={() => {
+            setBusy(true);
+            reread()
+              .catch(() => {
+                // reread records its own errors
+              })
+              .finally(() => {
+                setBusy(false);
+              });
+          }}
+        />
+      ) : null}
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 6 }}>
           <Stack spacing={3}>
@@ -202,7 +232,7 @@ function CompetitionDetailPage(): React.JSX.Element {
                     value={budget}
                   />
                   <div>
-                    <Button disabled={busy} onClick={saveDetails} variant="contained">
+                    <Button disabled={locked} onClick={saveDetails} variant="contained">
                       Save
                     </Button>
                   </div>
@@ -221,7 +251,7 @@ function CompetitionDetailPage(): React.JSX.Element {
                       <Tooltip title="Remove this day (only if no bets use it)">
                         <IconButton
                           aria-label={`Remove ${dayName(day)}`}
-                          disabled={busy}
+                          disabled={locked}
                           edge="end"
                           onClick={() => {
                             setRemovingDay(day.id);
@@ -260,7 +290,7 @@ function CompetitionDetailPage(): React.JSX.Element {
                     placeholder="Champion Day"
                     value={newLabel}
                   />
-                  <Button disabled={busy} onClick={addDay} variant="outlined">
+                  <Button disabled={locked} onClick={addDay} variant="outlined">
                     Add day
                   </Button>
                 </Stack>
@@ -280,7 +310,7 @@ function CompetitionDetailPage(): React.JSX.Element {
               {activeUsers.map((user) => (
                 <ListItem disablePadding divider key={user.id}>
                   <ListItemButton
-                    disabled={busy}
+                    disabled={locked}
                     onClick={() => {
                       toggleEntry(user);
                     }}

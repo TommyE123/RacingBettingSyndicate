@@ -15,12 +15,22 @@ import { PageHeader } from '@/components/common/page-header';
 import { ErrorAlert, Loading } from '@/components/common/states';
 
 export function RulesView(): React.JSX.Element {
-  const { competition, isLoading, error } = useCompetition();
+  const { competition, isLoading, error, refresh } = useCompetition();
   if (isLoading && !competition) {
     return <Loading />;
   }
-  if (error && !competition) {
-    return <ErrorAlert message={error} />;
+  // A failed switch keeps the previous competition loaded: show the error, never its budget.
+  if (error) {
+    return (
+      <ErrorAlert
+        message={error}
+        onRetry={() => {
+          refresh().catch(() => {
+            // refresh records its own errors
+          });
+        }}
+      />
+    );
   }
   // Never guess an amount: with no competition, name the budget without a figure.
   const budget = competition ? formatPence(competition.budget_pence).replace('.00', '') : 'the budget';
@@ -57,7 +67,9 @@ export function RulesView(): React.JSX.Element {
                 <TrophyIcon fontSize={44} weight="fill" />
               </Box>
               <div>
-                <Typography variant="h6">Bob Addis Memorial Trophy</Typography>
+                <Typography component="h5" variant="h6">
+                  Bob Addis Memorial Trophy
+                </Typography>
                 <Typography color="text.secondary" variant="body2">
                   For the most profit (or least loss) by the end of the week. The trophy stays in Looker&apos;s bar in
                   Lanzarote.
@@ -73,7 +85,9 @@ export function RulesView(): React.JSX.Element {
                 <SkullIcon fontSize={44} weight="fill" />
               </Box>
               <div>
-                <Typography variant="h6">JFK Blowout Trophy</Typography>
+                <Typography component="h5" variant="h6">
+                  JFK Blowout Trophy
+                </Typography>
                 <Typography color="text.secondary" variant="body2">
                   For the biggest loss (or least profit). It must be taken home and placed somewhere prominent.
                 </Typography>
@@ -84,7 +98,7 @@ export function RulesView(): React.JSX.Element {
       </Stack>
       <Card>
         <CardContent>
-          <Typography gutterBottom variant="h6">
+          <Typography component="h5" gutterBottom variant="h6">
             How the site works it out
           </Typography>
           <Stack component="ul" spacing={1} sx={{ m: 0, pl: 3 }}>

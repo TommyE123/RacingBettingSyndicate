@@ -15,6 +15,7 @@ import type { ApexOptions } from 'apexcharts';
 import type { CompetitionDetail, Standings } from '@/types/api';
 import { dayName, shortDayName } from '@/lib/days';
 import { formatPence, formatProfit } from '@/lib/money';
+import { escapeHtml } from '@/lib/text';
 import { useCompetition } from '@/contexts/competition-context';
 import { useApi } from '@/hooks/use-api';
 import { Chart } from '@/components/core/chart';
@@ -122,7 +123,8 @@ function PositionChart({ standings }: { standings: Standings }): React.JSX.Eleme
   const [mode, setMode] = React.useState<'profit' | 'rank' | 'staked'>('profit');
   const days = competition?.days ?? [];
   const series = standings.rows.map((row) => ({
-    name: row.display_name,
+    // ApexCharts writes series names into its legend and tooltip as HTML.
+    name: escapeHtml(row.display_name),
     data: row.days.map((day) =>
       mode === 'rank'
         ? day.rank

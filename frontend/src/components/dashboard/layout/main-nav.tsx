@@ -29,7 +29,7 @@ export function initials(name: string | undefined): string {
 
 export function MainNav(): React.JSX.Element {
   const [openNav, setOpenNav] = React.useState<boolean>(false);
-  const userPopover = usePopover<HTMLDivElement>();
+  const userPopover = usePopover<HTMLButtonElement>();
   const { user } = useUser();
   const { competition, isEntered } = useCompetition();
 
@@ -82,14 +82,16 @@ export function MainNav(): React.JSX.Element {
                 </Box>
               </Button>
             ) : null}
-            <Avatar
+            <IconButton
               aria-label="Account menu"
               onClick={userPopover.handleOpen}
               ref={userPopover.anchorRef}
-              sx={{ bgcolor: 'var(--mui-palette-primary-main)', cursor: 'pointer', fontSize: '0.9rem' }}
+              sx={{ p: 0 }}
             >
-              {initials(user?.display_name)}
-            </Avatar>
+              <Avatar sx={{ bgcolor: 'var(--mui-palette-primary-main)', fontSize: '0.9rem' }}>
+                {initials(user?.display_name)}
+              </Avatar>
+            </IconButton>
           </Stack>
         </Stack>
       </Box>

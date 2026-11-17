@@ -66,7 +66,7 @@ function Users(): React.JSX.Element {
   const { competition, refresh } = useCompetition();
   const [editing, setEditing] = React.useState<ApiUser | 'new' | null>(null);
   // A new or reset password stays on screen until the admin has passed it on.
-  const [handover, setHandover] = React.useState<{ name: string; password: string } | null>(null);
+  const [handover, setHandover] = React.useState<{ name: string; password: string; self: boolean } | null>(null);
   const notify = useNotify();
 
   const entered = new Set((competition?.entrants ?? []).map((entrant) => entrant.user_id));
@@ -154,8 +154,9 @@ function Users(): React.JSX.Element {
         }}
         onSaved={(saved, enter, password) => {
           setEditing(null);
+          const self = saved.id === me?.id;
           if (password) {
-            setHandover({ name: saved.display_name, password });
+            setHandover({ name: saved.display_name, password, self });
           }
           users.reload();
           const after = async (): Promise<void> => {
@@ -170,7 +171,9 @@ function Users(): React.JSX.Element {
               }
             }
             await refresh();
-            if (saved.id === me?.id) {
+            // A new password for yourself signs you out: wait until it has been read and
+            // Done pressed, so the password is never taken off screen first.
+            if (self && !password) {
               await checkSession?.();
             }
           };
@@ -199,7 +202,13 @@ function Users(): React.JSX.Element {
         <DialogActions>
           <Button
             onClick={() => {
+              const wasSelf = handover?.self;
               setHandover(null);
+              if (wasSelf) {
+                checkSession?.().catch(() => {
+                  // checkSession records its own errors
+                });
+              }
             }}
             variant="contained"
           >

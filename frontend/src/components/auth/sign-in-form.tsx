@@ -20,7 +20,7 @@ import { useUser } from '@/hooks/use-user';
 
 export function SignInForm(): React.JSX.Element {
   const router = useRouter();
-  const { checkSession } = useUser();
+  const { setUser } = useUser();
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
@@ -41,7 +41,7 @@ export function SignInForm(): React.JSX.Element {
       setIsPending(false);
       return;
     }
-    await checkSession?.();
+    setUser?.(result.user ?? null);
     router.replace(paths.dashboard.overview);
   };
 

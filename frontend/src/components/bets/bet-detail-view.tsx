@@ -39,7 +39,7 @@ import { canManage, SelectionsList, StatusChip } from './slip-view';
 export function BetDetailView(): React.JSX.Element {
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
-  const { version, dayById, bump } = useCompetition();
+  const { version, dayById, bump, isLoading: competitionLoading, latestChoice } = useCompetition();
   const { user, isAdmin } = useUser();
   const notify = useNotify();
   const slip = useApi<Slip>(Number.isFinite(id) ? `/api/slips/${id}` : null, [version]);
@@ -49,14 +49,22 @@ export function BetDetailView(): React.JSX.Element {
   const [voiding, setVoiding] = React.useState<Slip | null>(null);
   const [restoreWarning, setRestoreWarning] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
+  // Changes need this bet's competition to be the one selected, and not mid-switch: while
+  // another loads, the previous one's details are still in place.
   const editable = slip.data
-    ? canManage(slip.data, user?.id, isAdmin) && dayById(slip.data.day_id) !== undefined
+    ? canManage(slip.data, user?.id, isAdmin) &&
+      dayById(slip.data.day_id) !== undefined &&
+      !competitionLoading
     : false;
 
-  // Switching to another competition closes the editor, so it never comes back stale.
+  // Switching competitions closes the editor and any open return, void or restore prompt,
+  // so none of them can come back and act on a bet from the previous competition.
   React.useEffect(() => {
     if (!editable) {
       setEditing(false);
+      setReturning(null);
+      setVoiding(null);
+      setRestoreWarning(null);
     }
   }, [editable]);
 
@@ -70,13 +78,21 @@ export function BetDetailView(): React.JSX.Element {
   // A bet from another competition can be viewed but not changed until that competition is
   // selected, so edits never mix one competition's days with another's bet.
   const inThisCompetition = dayById(bet.day_id) !== undefined;
-  const manage = canManage(bet, user?.id, isAdmin) && inThisCompetition;
+  const manage = editable;
   const isVoid = Boolean(bet.voided_at);
 
   const restore = async (confirm: boolean): Promise<void> => {
+    if (!manage) {
+      return;
+    }
+    const startedFor = latestChoice();
     setBusy(true);
     try {
       const result = await restoreSlip(bet, confirm);
+      if (latestChoice() !== startedFor) {
+        // Another competition was picked meanwhile: drop the answer rather than prompt.
+        return;
+      }
       if (result.overBudget) {
         setRestoreWarning(result.overBudget);
       } else {

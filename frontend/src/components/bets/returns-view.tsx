@@ -128,7 +128,13 @@ function Returns({ competition }: { competition: CompetitionDetail }): React.JSX
         <Card>
           <CardHeader title={`Already entered (${done.length})`} />
           <CardContent sx={{ pt: 0 }}>
-            <SlipList showOwner={false} slips={done} />
+            <SlipList
+              onSlipChanged={(changed) => {
+                setSavedHere((current) => new Map(current).set(changed.id, changed));
+              }}
+              showOwner={false}
+              slips={done}
+            />
           </CardContent>
         </Card>
       ) : null}

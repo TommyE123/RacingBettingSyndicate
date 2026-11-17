@@ -169,6 +169,7 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
                 <Stack spacing={2}>
                   {isAdmin ? (
                     <TextField
+                      disabled={busy}
                       label="Whose sheet"
                       onChange={(event) => {
                         setOwner(Number(event.target.value));
@@ -185,6 +186,7 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
                     </TextField>
                   ) : null}
                   <TextField
+                    disabled={busy}
                     label="Day"
                     onChange={(event) => {
                       setDayId(Number(event.target.value));
@@ -199,6 +201,7 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
                     ))}
                   </TextField>
                   <MoneyField
+                    disabled={busy}
                     helperText="The total written on the sheet, if there is one. Used to check the bets add up."
                     label="Sheet total (optional)"
                     onChange={(text) => {
@@ -207,6 +210,7 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
                     value={totalText}
                   />
                   <TextField
+                    disabled={busy}
                     label="Note (optional)"
                     onChange={(event) => {
                       setNote(event.target.value);
@@ -220,6 +224,7 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
                   <Box
                     aria-label={file ? `Change the photo (${file.name})` : 'Take or choose a photo'}
                     component="button"
+                    disabled={busy}
                     onClick={() => inputRef.current?.click()}
                     type="button"
                     sx={{
@@ -230,7 +235,7 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
                       alignItems: 'center',
                       border: '2px dashed var(--mui-palette-divider)',
                       borderRadius: 2,
-                      cursor: 'pointer',
+                      cursor: busy ? 'default' : 'pointer',
                       display: 'flex',
                       flex: '1 1 auto',
                       flexDirection: 'column',
@@ -257,6 +262,7 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
                   </Box>
                   <input
                     accept="image/*"
+                    disabled={busy}
                     hidden
                     onChange={(event) => {
                       setFile(event.target.files?.[0] ?? null);
