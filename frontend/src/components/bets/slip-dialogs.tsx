@@ -79,7 +79,7 @@ export function ReturnDialog({
                 setText(value);
               }}
               onKeyDown={(event) => {
-                if (event.key === 'Enter' && pence !== null) {
+                if (event.key === 'Enter' && pence !== null && !busy) {
                   save(pence).catch(() => {
                     // save reports its own errors
                   });

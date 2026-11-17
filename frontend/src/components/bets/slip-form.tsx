@@ -68,7 +68,7 @@ export interface SlipFormProps {
 
 export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCancel }: SlipFormProps): React.JSX.Element {
   const { user, isAdmin } = useUser();
-  const { competition, betTypes, version, bump } = useCompetition();
+  const { competition, betTypes, version, bump, isLoading } = useCompetition();
   const days = React.useMemo(() => competition?.days ?? [], [competition]);
   const entrants = competition?.entrants ?? [];
   const editing = Boolean(slip);
@@ -182,6 +182,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
   };
 
   const canSubmit =
+    !isLoading &&
     owner !== '' &&
     dayId !== '' &&
     !problem &&
@@ -495,7 +496,10 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                   onChange={(_, value: 'unit' | 'total' | null) => {
                     if (value && value !== stakeMode) {
                       if (stakePence !== null && parts) {
-                        setStakeText(penceToInput(value === 'total' ? stakePence * parts : stakePence / parts));
+                        // A total that does not split into whole pence is cleared, not rounded
+                        // into a different stake.
+                        const converted = value === 'total' ? stakePence * parts : stakePence / parts;
+                        setStakeText(Number.isInteger(converted) ? penceToInput(converted) : '');
                       }
                       setStakeMode(value);
                     }
@@ -581,7 +585,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
               Cancel
             </Button>
           ) : null}
-          <Button disabled={busy} size="large" type="submit" variant="contained">
+          <Button disabled={busy || isLoading} size="large" type="submit" variant="contained">
             {busy ? 'Saving…' : editing ? 'Save changes' : 'Save bet'}
           </Button>
         </Stack>

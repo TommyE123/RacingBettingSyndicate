@@ -75,9 +75,13 @@ function Audit(): React.JSX.Element {
   const [busy, setBusy] = React.useState(true);
   const [done, setDone] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // Only the latest request may update the table, so a slow earlier filter cannot replace it.
+  const latest = React.useRef(0);
 
   const load = React.useCallback(
     async (before: number | null): Promise<void> => {
+      latest.current += 1;
+      const thisRequest = latest.current;
       setBusy(true);
       setError(null);
       try {
@@ -89,12 +93,19 @@ function Audit(): React.JSX.Element {
             actor_user_id: actor || null,
           })
         );
+        if (thisRequest !== latest.current) {
+          return;
+        }
         setRows((current) => (before === null ? page : [...current, ...page]));
         setDone(page.length < PAGE);
       } catch (error_) {
-        setError(errorMessage(error_));
+        if (thisRequest === latest.current) {
+          setError(errorMessage(error_));
+        }
       } finally {
-        setBusy(false);
+        if (thisRequest === latest.current) {
+          setBusy(false);
+        }
       }
     },
     [entity, actor]

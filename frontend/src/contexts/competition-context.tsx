@@ -52,18 +52,27 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [version, setVersion] = React.useState(0);
+  // Each load gets a number; only the latest may update state, so a slow earlier load
+  // can never replace the competition chosen after it.
+  const latestLoad = React.useRef(0);
 
   const load = React.useCallback(
     async (preferredId: number | null): Promise<void> => {
       if (!user) {
         return;
       }
+      latestLoad.current += 1;
+      const thisLoad = latestLoad.current;
+      const isCurrent = (): boolean => thisLoad === latestLoad.current;
       setError(null);
       try {
         const [list, types] = await Promise.all([
           api<CompetitionSummary[]>('/api/competitions'),
           api<BetType[]>('/api/bet-types'),
         ]);
+        if (!isCurrent()) {
+          return;
+        }
         setCompetitions(list);
         setBetTypes(types);
         const wanted = preferredId ?? readStoredId();
@@ -71,15 +80,22 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
           list.find((item) => item.id === wanted) ?? list.find((item) => item.entered) ?? list[0] ?? null;
         if (chosen) {
           setSelectedId(chosen.id);
-          setCompetition(await api<CompetitionDetail>(`/api/competitions/${chosen.id}`));
+          const detail = await api<CompetitionDetail>(`/api/competitions/${chosen.id}`);
+          if (isCurrent()) {
+            setCompetition(detail);
+          }
         } else {
           setSelectedId(null);
           setCompetition(null);
         }
       } catch (error_) {
-        setError(errorMessage(error_));
+        if (isCurrent()) {
+          setError(errorMessage(error_));
+        }
       } finally {
-        setIsLoading(false);
+        if (isCurrent()) {
+          setIsLoading(false);
+        }
       }
     },
     [user]

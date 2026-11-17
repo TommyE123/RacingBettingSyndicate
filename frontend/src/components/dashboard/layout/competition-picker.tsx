@@ -28,12 +28,13 @@ export function CompetitionPicker(): React.JSX.Element {
         </Typography>
       ) : (
         <Select
-          aria-label="Competition"
           fullWidth
           onChange={(event) => {
             select(Number(event.target.value));
           }}
           size="small"
+          // The name goes on the dropdown itself (the element with the combobox role).
+          SelectDisplayProps={{ 'aria-label': 'Competition' } as React.HTMLAttributes<HTMLDivElement>}
           sx={{
             color: 'inherit',
             fontWeight: 600,

@@ -42,10 +42,22 @@ export function UsersView(): React.JSX.Element {
   );
 }
 
+// 64 short racing words, so each pick is 6 bits: four words plus two digits is about 31 bits
+// from a secure random source, yet still easy to read out to someone. Members can change it.
+const WORDS = [
+  'ascot', 'bay', 'bet', 'bit', 'bolt', 'bridle', 'canter', 'cap', 'chase', 'cheek', 'clerk', 'colt',
+  'course', 'dam', 'derby', 'ditch', 'draw', 'evens', 'fence', 'filly', 'flag', 'foal', 'form', 'furlong',
+  'gallop', 'gate', 'going', 'gold', 'grey', 'hack', 'hands', 'heath', 'hood', 'hurdle', 'jump', 'lady',
+  'lead', 'mare', 'mile', 'nag', 'nose', 'oaks', 'odds', 'pace', 'paddock', 'pony', 'post', 'rail', 'rein',
+  'roan', 'saddle', 'sire', 'stable', 'stayer', 'stride', 'stud', 'tote', 'track', 'trot', 'turf', 'whip',
+  'yankee', 'yard', 'yearling',
+];
+
 function suggestPassword(): string {
-  const words = ['nag', 'filly', 'furlong', 'chase', 'hurdle', 'odds', 'yankee', 'canter', 'gallop', 'stayer'];
-  const pick = (): string => words[Math.floor(Math.random() * words.length)];
-  return `${pick()}-${pick()}-${Math.floor(100 + Math.random() * 900)}`;
+  const random = globalThis.crypto.getRandomValues(new Uint8Array(6));
+  const words = Array.from(random.slice(0, 4), (byte) => WORDS[byte % WORDS.length]);
+  const digits = String((random[4] * 256 + random[5]) % 100).padStart(2, '0');
+  return `${words.join('-')}-${digits}`;
 }
 
 function Users(): React.JSX.Element {
@@ -53,6 +65,7 @@ function Users(): React.JSX.Element {
   const { user: me, checkSession } = useUser();
   const { competition, refresh } = useCompetition();
   const [editing, setEditing] = React.useState<ApiUser | 'new' | null>(null);
+  const notify = useNotify();
 
   const entered = new Set((competition?.entrants ?? []).map((entrant) => entrant.user_id));
 
@@ -142,7 +155,14 @@ function Users(): React.JSX.Element {
           users.reload();
           const after = async (): Promise<void> => {
             if (enter && competition) {
-              await api(`/api/admin/competitions/${competition.id}/entries/${saved.id}`, { method: 'PUT' });
+              try {
+                await api(`/api/admin/competitions/${competition.id}/entries/${saved.id}`, { method: 'PUT' });
+              } catch (error) {
+                notify(
+                  `${saved.display_name} was added, but entering them in ${competition.name} failed (${errorMessage(error)}). Tick them under Competitions to try again.`,
+                  'error'
+                );
+              }
             }
             await refresh();
             if (saved.id === me?.id) {

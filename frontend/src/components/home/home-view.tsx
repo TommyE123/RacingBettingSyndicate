@@ -225,7 +225,9 @@ function Home({ competition }: { competition: CompetitionDetail }): React.JSX.El
             title="My bets today"
           />
           <CardContent sx={{ pt: 0 }}>
-            {mySlips.isLoading && !mySlips.data ? (
+            {mySlips.error ? (
+              <ErrorAlert message={mySlips.error} onRetry={mySlips.reload} />
+            ) : mySlips.isLoading && !mySlips.data ? (
               <Loading />
             ) : (
               <SlipList

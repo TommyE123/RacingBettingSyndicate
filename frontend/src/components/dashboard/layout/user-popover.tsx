@@ -16,6 +16,7 @@ import { UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/client';
 import { logger } from '@/lib/default-logger';
+import { useNotify } from '@/contexts/notify-context';
 import { useUser } from '@/hooks/use-user';
 
 export interface UserPopoverProps {
@@ -27,15 +28,18 @@ export interface UserPopoverProps {
 export function UserPopover({ anchorEl, onClose, open }: UserPopoverProps): React.JSX.Element {
   const { user, checkSession } = useUser();
   const router = useRouter();
+  const notify = useNotify();
 
   const handleSignOut = React.useCallback(async (): Promise<void> => {
     const { error } = await authClient.signOut();
     if (error) {
       logger.error('Sign out error', error);
+      notify(`Could not sign out: ${error}`, 'error');
+      return;
     }
     await checkSession?.();
     router.replace(paths.auth.signIn);
-  }, [checkSession, router]);
+  }, [checkSession, notify, router]);
 
   return (
     <Popover

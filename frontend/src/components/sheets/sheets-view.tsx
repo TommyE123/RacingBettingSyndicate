@@ -24,7 +24,7 @@ import type { CompetitionDetail, Sheet } from '@/types/api';
 import { paths } from '@/paths';
 import { api, errorMessage, withQuery } from '@/lib/api';
 import { dayName, defaultDay, formatTime } from '@/lib/days';
-import { formatPence } from '@/lib/money';
+import { formatPence, parsePounds } from '@/lib/money';
 import { useCompetition } from '@/contexts/competition-context';
 import { useNotify } from '@/contexts/notify-context';
 import { useApi } from '@/hooks/use-api';
@@ -103,7 +103,12 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
     setBusy(true);
     setError(null);
     try {
-      const stated = parsePence(totalText);
+      const stated = parsePounds(totalText);
+      if (totalText.trim() && stated === null) {
+        setError('Enter the sheet total like 30 or 2.50, or leave it empty');
+        setBusy(false);
+        return;
+      }
       const sheet = await api<Sheet>(
         withQuery(`/api/competitions/${competition.id}/sheets`, {
           day_id: dayId,
@@ -198,8 +203,15 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
               <Grid size={{ xs: 12, md: 5 }}>
                 <Stack spacing={2} sx={{ height: '100%' }}>
                   <Box
+                    aria-label={file ? `Change the photo (${file.name})` : 'Take or choose a photo'}
+                    component="button"
                     onClick={() => inputRef.current?.click()}
+                    type="button"
                     sx={{
+                      bgcolor: 'transparent',
+                      color: 'inherit',
+                      font: 'inherit',
+                      '&:focus-visible': { outline: '2px solid var(--mui-palette-primary-main)', outlineOffset: 2 },
                       alignItems: 'center',
                       border: '2px dashed var(--mui-palette-divider)',
                       borderRadius: 2,
@@ -317,12 +329,3 @@ function Sheets({ competition }: { competition: CompetitionDetail }): React.JSX.
   );
 }
 
-function parsePence(text: string): number | null {
-  const value = text.trim();
-  if (!value) {
-    return null;
-  }
-  const cleaned = value.replace(/^£/, '').replaceAll(',', '');
-  const number = Number(cleaned);
-  return Number.isFinite(number) && number >= 0 ? Math.round(number * 100) : null;
-}

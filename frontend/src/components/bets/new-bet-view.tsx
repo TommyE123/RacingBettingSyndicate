@@ -136,7 +136,12 @@ function NewBet({ competition }: { competition: CompetitionDetail }): React.JSX.
               Keep going for the rest of the sheet, or check them on{' '}
               <RouterLink href={paths.dashboard.bets}>All bets</RouterLink>.
             </Typography>
-            <SlipList slips={saved} />
+            <SlipList
+              onSlipChanged={(changed) => {
+                setSaved((current) => current.map((item) => (item.id === changed.id ? changed : item)));
+              }}
+              slips={saved}
+            />
           </CardContent>
         </Card>
       ) : null}

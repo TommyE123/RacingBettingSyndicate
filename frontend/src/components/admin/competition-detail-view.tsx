@@ -52,6 +52,8 @@ function CompetitionDetailPage(): React.JSX.Element {
   const { refresh, competition: shown, select } = useCompetition();
   const notify = useNotify();
   const detail = useApi<CompetitionDetail>(`/api/competitions/${id}`);
+  // The latest copy fetched after a change, so controls show it before re-enabling.
+  const [fresh, setFresh] = React.useState<CompetitionDetail | null>(null);
   const users = useApi<ApiUser[]>('/api/admin/users');
   const [name, setName] = React.useState('');
   const [budget, setBudget] = React.useState('');
@@ -73,24 +75,24 @@ function CompetitionDetailPage(): React.JSX.Element {
   if (detail.error || !detail.data) {
     return <ErrorAlert message={detail.error ?? 'Competition not found'} />;
   }
-  const data = detail.data;
+  const data = fresh ?? detail.data;
   const entered = new Set(data.entrants.map((entrant) => entrant.user_id));
 
-  const afterChange = async (message: string): Promise<void> => {
-    notify(message);
-    detail.reload();
-    if (shown?.id === data.id) {
-      await refresh();
-    }
-  };
-
-  const run = async (action: () => Promise<unknown>, message: string): Promise<void> => {
+  // Runs a change, then waits for the competition's fresh data before re-enabling the
+  // controls, so a quick second click acts on what is really there. True if it worked.
+  const run = async (action: () => Promise<unknown>, message: string): Promise<boolean> => {
     setBusy(true);
     try {
       await action();
-      await afterChange(message);
+      setFresh(await api<CompetitionDetail>(`/api/competitions/${id}`));
+      notify(message);
+      if (shown?.id === data.id) {
+        await refresh();
+      }
+      return true;
     } catch (error) {
       notify(errorMessage(error), 'error');
+      return false;
     } finally {
       setBusy(false);
     }
@@ -127,9 +129,11 @@ function CompetitionDetailPage(): React.JSX.Element {
         }),
       'Day added'
     )
-      .then(() => {
-        setNewDate('');
-        setNewLabel('');
+      .then((added) => {
+        if (added) {
+          setNewDate('');
+          setNewLabel('');
+        }
       })
       .catch(() => {
         // run reports its own errors

@@ -57,7 +57,10 @@ export function BetDetailView(): React.JSX.Element {
     return <ErrorAlert message={slip.error ?? 'Bet not found'} />;
   }
   const bet = slip.data;
-  const manage = canManage(bet, user?.id, isAdmin);
+  // A bet from another competition can be viewed but not changed until that competition is
+  // selected, so edits never mix one competition's days with another's bet.
+  const inThisCompetition = dayById(bet.day_id) !== undefined;
+  const manage = canManage(bet, user?.id, isAdmin) && inThisCompetition;
   const isVoid = Boolean(bet.voided_at);
 
   const restore = async (confirm: boolean): Promise<void> => {
@@ -152,6 +155,11 @@ export function BetDetailView(): React.JSX.Element {
         ) : null}
       </Stack>
 
+      {inThisCompetition ? null : (
+        <Alert severity="info">
+          This bet belongs to another competition. Switch to it in the competition picker to change it.
+        </Alert>
+      )}
       {isVoid ? (
         <Alert severity="warning">
           Voided {bet.voided_at ? formatDateTime(bet.voided_at) : ''}

@@ -3,6 +3,7 @@
 import * as React from 'react';
 import RouterLink from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -42,8 +43,13 @@ export function SheetDetailView(): React.JSX.Element {
   const { competition, version, dayById, bump } = useCompetition();
   const notify = useNotify();
   const sheet = useApi<Sheet>(`/api/sheets/${id}`, [version]);
+  // The sheet belongs to whichever competition holds its day. If another competition is
+  // selected, nothing here may load or change data through the wrong one.
+  const inThisCompetition = sheet.data ? dayById(sheet.data.day_id) !== undefined : false;
   const slips = useApi<Slip[]>(
-    competition ? `/api/competitions/${competition.id}/slips?sheet_id=${id}&include_void=true` : null,
+    competition && inThisCompetition
+      ? `/api/competitions/${competition.id}/slips?sheet_id=${id}&include_void=true`
+      : null,
     [version]
   );
   const [editing, setEditing] = React.useState(false);
@@ -53,13 +59,16 @@ export function SheetDetailView(): React.JSX.Element {
   const [busy, setBusy] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
 
-  React.useEffect(() => {
+  // Fill the edit form from the sheet as editing starts, so a background reload never
+  // replaces changes that are still being typed.
+  const startEditing = (): void => {
     if (sheet.data) {
       setDayId(sheet.data.day_id);
       setTotalText(penceToInput(sheet.data.stated_total_pence));
       setNote(sheet.data.note ?? '');
     }
-  }, [sheet.data]);
+    setEditing(true);
+  };
 
   if (sheet.isLoading && !sheet.data) {
     return <Loading />;
@@ -68,12 +77,16 @@ export function SheetDetailView(): React.JSX.Element {
     return <ErrorAlert message={sheet.error ?? 'Sheet not found'} />;
   }
   const data = sheet.data;
-  const manage = isAdmin || data.user_id === user?.id;
+  const manage = (isAdmin || data.user_id === user?.id) && inThisCompetition;
 
   const save = async (): Promise<void> => {
+    const stated = parsePounds(totalText);
+    if (totalText.trim() && stated === null) {
+      notify('Enter the sheet total like 30 or 2.50, or leave it empty to clear it', 'error');
+      return;
+    }
     setBusy(true);
     try {
-      const stated = parsePounds(totalText);
       await api(`/api/sheets/${data.id}`, {
         method: 'PATCH',
         json: {
@@ -168,7 +181,11 @@ export function SheetDetailView(): React.JSX.Element {
                   manage ? (
                     <Button
                       onClick={() => {
-                        setEditing((value) => !value);
+                        if (editing) {
+                          setEditing(false);
+                        } else {
+                          startEditing();
+                        }
                       }}
                       size="small"
                     >
@@ -249,11 +266,19 @@ export function SheetDetailView(): React.JSX.Element {
             <Card>
               <CardHeader title="Bets entered from this sheet" />
               <CardContent sx={{ pt: 0 }}>
-                {slips.data ? (
-                  <SlipList emptyText="None yet." showOwner={false} slips={slips.data} />
-                ) : (
-                  <Loading />
+                {inThisCompetition ? null : (
+                  <Alert severity="info">
+                    This sheet belongs to another competition. Switch to it in the competition picker to see
+                    and enter its bets.
+                  </Alert>
                 )}
+                {slips.error ? (
+                  <ErrorAlert message={slips.error} onRetry={slips.reload} />
+                ) : slips.data ? (
+                  <SlipList emptyText="None yet." showOwner={false} slips={slips.data} />
+                ) : slips.isLoading ? (
+                  <Loading />
+                ) : null}
               </CardContent>
             </Card>
           </Stack>

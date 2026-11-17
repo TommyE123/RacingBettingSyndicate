@@ -226,10 +226,13 @@ export function SlipList({
   slips,
   showOwner = true,
   emptyText = 'No bets yet.',
+  onSlipChanged,
 }: {
   slips: Slip[];
   showOwner?: boolean;
   emptyText?: string;
+  // For lists held locally rather than loaded from the API, so they show saved returns.
+  onSlipChanged?: (slip: Slip) => void;
 }): React.JSX.Element {
   const wide = useMediaQuery('(min-width:900px)');
   const [returning, setReturning] = React.useState<Slip | null>(null);
@@ -249,6 +252,7 @@ export function SlipList({
       onClose={() => {
         setReturning(null);
       }}
+      onSaved={onSlipChanged}
       slip={returning}
     />
   );

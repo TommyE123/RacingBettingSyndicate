@@ -13,7 +13,8 @@ export interface ApiState<T> {
 
 // Loads a GET endpoint. Pass null to skip. Reloads when the path or any dependency changes.
 export function useApi<T>(path: string | null, deps: React.DependencyList = []): ApiState<T> {
-  const [data, setData] = React.useState<T | undefined>();
+  // The data and the path that produced it, so a new path never shows the old path's data.
+  const [result, setResult] = React.useState<{ path: string; data: T } | undefined>();
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(path !== null);
   const [tick, setTick] = React.useState(0);
@@ -27,8 +28,8 @@ export function useApi<T>(path: string | null, deps: React.DependencyList = []):
     setIsLoading(true);
     setError(null);
     api<T>(path, { signal: controller.signal })
-      .then((result) => {
-        setData(result);
+      .then((loaded) => {
+        setResult({ path, data: loaded });
         setIsLoading(false);
       })
       .catch((error_: unknown) => {
@@ -48,5 +49,6 @@ export function useApi<T>(path: string | null, deps: React.DependencyList = []):
     setTick((value) => value + 1);
   }, []);
 
+  const data = result && result.path === path ? result.data : undefined;
   return { data, error, isLoading, reload };
 }

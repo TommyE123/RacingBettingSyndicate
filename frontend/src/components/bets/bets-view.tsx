@@ -35,6 +35,12 @@ export function BetsView(): React.JSX.Element {
   return <RequireCompetition>{(competition) => <Bets competition={competition} />}</RequireCompetition>;
 }
 
+// Text people typed (names, horses, notes) is prefixed with ' when it starts like a formula,
+// so a spreadsheet shows it as text rather than running it. Money columns stay numeric.
+function csvText(value: string): string {
+  return /^[=+\-@\t\r]/.test(value) ? csvCell(`'${value}`) : csvCell(value);
+}
+
 function csvCell(value: string | number): string {
   const text = String(value);
   return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
@@ -44,21 +50,19 @@ function exportCsv(slips: Slip[], competition: CompetitionDetail, dayLabel: (id:
   const header = ['Day', 'Who', 'Bet', 'Bets', 'Each way', 'Stake per bet', 'Staked', 'Returned', 'Profit', 'Horses', 'Status', 'Note'];
   const lines = slips.map((slip) =>
     [
-      dayLabel(slip.day_id),
-      slip.display_name,
-      betHeadline(slip),
-      slip.line_count,
-      slip.each_way ? 'yes' : 'no',
-      (slip.unit_stake_pence / 100).toFixed(2),
-      (slip.stake_pence / 100).toFixed(2),
-      slip.return_pence === null ? '' : (slip.return_pence / 100).toFixed(2),
-      slip.profit_pence === null ? '' : (slip.profit_pence / 100).toFixed(2),
-      slip.selections.map((selection) => `${selection.race_time} ${selection.horse_name}`).join('; '),
-      slipStatus(slip),
-      slip.note ?? '',
-    ]
-      .map((cell) => csvCell(cell))
-      .join(',')
+      csvText(dayLabel(slip.day_id)),
+      csvText(slip.display_name),
+      csvText(betHeadline(slip)),
+      csvCell(slip.line_count),
+      csvCell(slip.each_way ? 'yes' : 'no'),
+      csvCell((slip.unit_stake_pence / 100).toFixed(2)),
+      csvCell((slip.stake_pence / 100).toFixed(2)),
+      csvCell(slip.return_pence === null ? '' : (slip.return_pence / 100).toFixed(2)),
+      csvCell(slip.profit_pence === null ? '' : (slip.profit_pence / 100).toFixed(2)),
+      csvText(slip.selections.map((selection) => `${selection.race_time} ${selection.horse_name}`).join('; ')),
+      csvCell(slipStatus(slip)),
+      csvText(slip.note ?? ''),
+    ].join(',')
   );
   const blob = new Blob([[header.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);

@@ -27,17 +27,21 @@ export function AccountView(): React.JSX.Element {
   const [repeat, setRepeat] = React.useState('');
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [fieldError, setFieldError] = React.useState<{ next?: string; repeat?: string }>({});
 
   const submit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     if (next.length < 8) {
-      setError('The new password needs at least 8 characters');
+      setFieldError({ next: 'The new password needs at least 8 characters' });
+      setError(null);
       return;
     }
     if (next !== repeat) {
-      setError('The new passwords do not match');
+      setFieldError({ repeat: 'The new passwords do not match' });
+      setError(null);
       return;
     }
+    setFieldError({});
     setBusy(true);
     setError(null);
     const result = await authClient.changePassword(current, next);
@@ -104,7 +108,8 @@ export function AccountView(): React.JSX.Element {
                   />
                   <TextField
                     autoComplete="new-password"
-                    helperText="At least 8 characters"
+                    error={Boolean(fieldError.next)}
+                    helperText={fieldError.next ?? 'At least 8 characters'}
                     label="New password"
                     onChange={(event) => {
                       setNext(event.target.value);
@@ -114,6 +119,8 @@ export function AccountView(): React.JSX.Element {
                   />
                   <TextField
                     autoComplete="new-password"
+                    error={Boolean(fieldError.repeat)}
+                    helperText={fieldError.repeat}
                     label="New password again"
                     onChange={(event) => {
                       setRepeat(event.target.value);

@@ -56,5 +56,7 @@ export function RequireCompetition({
       />
     );
   }
-  return <>{children(competition)}</>;
+  // Keyed by competition, so switching competitions starts each page afresh: filters, the
+  // chosen person and half-filled forms never carry over to the other competition.
+  return <React.Fragment key={competition.id}>{children(competition)}</React.Fragment>;
 }
