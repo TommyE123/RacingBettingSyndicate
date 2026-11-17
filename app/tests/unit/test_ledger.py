@@ -58,3 +58,18 @@ def test_comeback_counts_places_climbed_to_the_latest_day():
     ]
     stats = ledger.statistics(50_000, [TUE, WED], [MO, JACKO], slips)
     assert stats["comebacks"] == [{"user_id": 2, "places_climbed": 1}]
+
+
+def test_a_day_where_only_an_earlier_losing_bet_settled_has_no_winner():
+    # Placed Tuesday, last leg Wednesday, lost; nobody staked or won anything on Wednesday.
+    slips = [slip(1, 1, ["A", "B"], return_pence=0, settle_day_id=2)]
+    table = ledger.standings(50_000, [TUE, WED], [MO, JACKO], slips)
+    assert [winner["day_id"] for winner in table["daily_winners"]] == [1]
+    assert ledger.statistics(50_000, [TUE, WED], [MO, JACKO], slips)["horse_count"] == 2
+
+
+def test_a_horse_written_twice_on_one_slip_counts_as_one_slip():
+    stats = ledger.statistics(50_000, [TUE], [MO], [slip(1, 1, ["Stumptown", "STUMP TOWN"])])
+    [horse] = stats["horses"]
+    assert horse["slip_count"] == 1
+    assert horse["spellings"] == ["STUMP TOWN", "Stumptown"]

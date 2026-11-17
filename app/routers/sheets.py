@@ -15,7 +15,7 @@ from sqlalchemy import func, select
 
 from app import audit
 from app.deps import CurrentUser, DbSession  # noqa: TC001 - FastAPI reads these at runtime
-from app.models import CompetitionDay, Entry, Sheet, Slip
+from app.models import CompetitionDay, Entry, Sheet, Slip, User
 from app.routers.bets import (
     competition_or_404,
     entry_for,
@@ -103,6 +103,36 @@ def _check_day(db: Session, competition_id: int, day_id: int) -> None:
         )
 
 
+def _check_upload(
+    db: Session, user: User, competition_id: int, owner_id: int, day_id: int
+) -> Entry:
+    competition = competition_or_404(db, competition_id)
+    if owner_id != user.id and not is_admin(user):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only admins can upload for someone else")
+    entry = entry_for(db, competition.id, owner_id)
+    if entry is None:
+        who = "You are" if owner_id == user.id else "That person is"
+        raise HTTPException(status.HTTP_409_CONFLICT, f"{who} not entered in this competition")
+    _check_day(db, competition.id, day_id)
+    return entry
+
+
+async def _read_photo(request: Request) -> bytes:
+    """Read the body, refusing it as soon as it passes the limit, with or without a size header."""
+    too_big = HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "Photos must be 15 MB or smaller")
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit() and int(declared) > MAX_IMAGE_BYTES:
+        raise too_big
+    chunks: list[bytes] = []
+    size = 0
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size > MAX_IMAGE_BYTES:
+            raise too_big
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
 @router.post("/competitions/{competition_id}/sheets", status_code=status.HTTP_201_CREATED)
 async def upload_sheet(  # noqa: PLR0913 - metadata travels as query parameters
     competition_id: int,
@@ -115,22 +145,12 @@ async def upload_sheet(  # noqa: PLR0913 - metadata travels as query parameters
     stated_total_pence: Annotated[int | None, Query(ge=0, le=100_000_000)] = None,
     note: Annotated[str | None, Query(max_length=500)] = None,
 ) -> SheetOut:
-    competition = competition_or_404(db, competition_id)
     owner_id = user_id if user_id is not None else user.id
-    if owner_id != user.id and not is_admin(user):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only admins can upload for someone else")
-    entry = entry_for(db, competition.id, owner_id)
-    if entry is None:
-        who = "You are" if owner_id == user.id else "That person is"
-        raise HTTPException(status.HTTP_409_CONFLICT, f"{who} not entered in this competition")
-    _check_day(db, competition.id, day_id)
-
-    declared = request.headers.get("content-length")
-    if declared and declared.isdigit() and int(declared) > MAX_IMAGE_BYTES:
-        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "Photos must be 15 MB or smaller")
-    data = await request.body()
-    if len(data) > MAX_IMAGE_BYTES:
-        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "Photos must be 15 MB or smaller")
+    _check_upload(db, user, competition_id, owner_id, day_id)
+    # Every transaction holds SQLite's write lock, so end this one before waiting for the
+    # photo: a slow upload must not hold up everyone else. Nothing has been written.
+    db.rollback()
+    data = await _read_photo(request)
     sniffed = sniff_image(data)
     if sniffed is None:
         raise HTTPException(
@@ -138,13 +158,13 @@ async def upload_sheet(  # noqa: PLR0913 - metadata travels as query parameters
         )
     content_type, extension = sniffed
 
+    # A fresh, short transaction: check again, as things may have changed while it arrived.
+    entry = _check_upload(db, user, competition_id, owner_id, day_id)
     folder = upload_dir(request)
     folder.mkdir(parents=True, exist_ok=True)
     filename = f"{secrets.token_hex(16)}.{extension}"
     partial = folder / f".{filename}.part"
-    partial.write_bytes(data)
-    partial.replace(folder / filename)
-
+    final = folder / filename
     sheet = Sheet(
         entry_id=entry.id,
         day_id=day_id,
@@ -155,8 +175,10 @@ async def upload_sheet(  # noqa: PLR0913 - metadata travels as query parameters
         note=(note or "").strip() or None,
         uploaded_by=user.id,
     )
-    db.add(sheet)
     try:
+        partial.write_bytes(data)
+        partial.replace(final)
+        db.add(sheet)
         db.flush()
         audit.record(
             db,
@@ -164,7 +186,7 @@ async def upload_sheet(  # noqa: PLR0913 - metadata travels as query parameters
             "sheet.uploaded",
             "sheet",
             sheet.id,
-            competition_id=competition.id,
+            competition_id=competition_id,
             user_id=owner_id,
             day_id=day_id,
             size_bytes=len(data),
@@ -172,7 +194,8 @@ async def upload_sheet(  # noqa: PLR0913 - metadata travels as query parameters
         )
         db.commit()
     except Exception:
-        (folder / filename).unlink(missing_ok=True)
+        partial.unlink(missing_ok=True)
+        final.unlink(missing_ok=True)
         raise
     return sheets_out(db, [sheet])[0]
 
