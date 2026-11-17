@@ -54,9 +54,11 @@ const WORDS = [
 ];
 
 function suggestPassword(): string {
-  const random = globalThis.crypto.getRandomValues(new Uint8Array(6));
-  const words = Array.from(random.slice(0, 4), (byte) => WORDS[byte % WORDS.length]);
-  const digits = String((random[4] * 256 + random[5]) % 100).padStart(2, '0');
+  // Five words from 64 (30 bits, unbiased as 256 is a multiple of 64) plus two digits,
+  // about 36 bits in all, while staying easy to read aloud and type on a phone.
+  const random = globalThis.crypto.getRandomValues(new Uint8Array(7));
+  const words = Array.from(random.slice(0, 5), (byte) => WORDS[byte % WORDS.length]);
+  const digits = String((random[5] * 256 + random[6]) % 100).padStart(2, '0');
   return `${words.join('-')}-${digits}`;
 }
 

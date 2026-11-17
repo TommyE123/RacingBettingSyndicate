@@ -58,6 +58,15 @@ export function SheetDetailView(): React.JSX.Element {
   const [note, setNote] = React.useState('');
   const [busy, setBusy] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const manage = sheet.data ? (isAdmin || sheet.data.user_id === user?.id) && inThisCompetition : false;
+
+  // Switching to another competition closes the form, so its draft never comes back stale.
+  React.useEffect(() => {
+    if (!manage) {
+      setEditing(false);
+      setConfirmDelete(false);
+    }
+  }, [manage]);
 
   // Fill the edit form from the sheet as editing starts, so a background reload never
   // replaces changes that are still being typed.
@@ -77,9 +86,15 @@ export function SheetDetailView(): React.JSX.Element {
     return <ErrorAlert message={sheet.error ?? 'Sheet not found'} />;
   }
   const data = sheet.data;
-  const manage = (isAdmin || data.user_id === user?.id) && inThisCompetition;
+
+  // The edit form and its actions only exist while the sheet is in the selected competition,
+  // so switching competitions with the form open closes it rather than saving through the wrong one.
+  const editOpen = editing && manage;
 
   const save = async (): Promise<void> => {
+    if (!manage) {
+      return;
+    }
     const stated = parsePounds(totalText);
     if (totalText.trim() && stated === null) {
       notify('Enter the sheet total like 30 or 2.50, or leave it empty to clear it', 'error');
@@ -107,6 +122,9 @@ export function SheetDetailView(): React.JSX.Element {
   };
 
   const remove = async (): Promise<void> => {
+    if (!manage) {
+      return;
+    }
     setBusy(true);
     try {
       await api(`/api/sheets/${data.id}`, { method: 'DELETE' });
@@ -181,7 +199,7 @@ export function SheetDetailView(): React.JSX.Element {
                   manage ? (
                     <Button
                       onClick={() => {
-                        if (editing) {
+                        if (editOpen) {
                           setEditing(false);
                         } else {
                           startEditing();
@@ -189,14 +207,14 @@ export function SheetDetailView(): React.JSX.Element {
                       }}
                       size="small"
                     >
-                      {editing ? 'Cancel' : 'Edit'}
+                      {editOpen ? 'Cancel' : 'Edit'}
                     </Button>
                   ) : undefined
                 }
                 title="Check it adds up"
               />
               <CardContent sx={{ pt: 0 }}>
-                {editing ? (
+                {editOpen ? (
                   <Stack spacing={2}>
                     <TextField
                       label="Day"
@@ -297,7 +315,7 @@ export function SheetDetailView(): React.JSX.Element {
             // remove reports its own errors
           });
         }}
-        open={confirmDelete}
+        open={confirmDelete && manage}
         title="Delete this sheet?"
       />
     </Stack>
