@@ -1,97 +1,53 @@
 'use client';
 
-import type { User } from '@/types/user';
+import type { ApiUser } from '@/types/api';
+import { api, ApiError, errorMessage } from '@/lib/api';
 
-function generateToken(): string {
-  const arr = new Uint8Array(12);
-  globalThis.crypto.getRandomValues(arr);
-  return Array.from(arr, (v) => v.toString(16).padStart(2, '0')).join('');
-}
-
-const user = {
-  id: 'USR-000',
-  avatar: '/assets/avatar.png',
-  firstName: 'Sofia',
-  lastName: 'Rivers',
-  email: 'sofia@devias.io',
-} satisfies User;
-
-export interface SignUpParams {
-  firstName: string;
-  lastName: string;
-  email: string;
+export interface SignInParams {
+  username: string;
   password: string;
-}
-
-export interface SignInWithOAuthParams {
-  provider: 'google' | 'discord';
-}
-
-export interface SignInWithPasswordParams {
-  email: string;
-  password: string;
-}
-
-export interface ResetPasswordParams {
-  email: string;
 }
 
 class AuthClient {
-  async signUp(_: SignUpParams): Promise<{ error?: string }> {
-    // Make API request
-
-    // We do not handle the API, so we'll just generate a token and store it in localStorage.
-    const token = generateToken();
-    localStorage.setItem('custom-auth-token', token);
-
-    return {};
-  }
-
-  async signInWithOAuth(_: SignInWithOAuthParams): Promise<{ error?: string }> {
-    return { error: 'Social authentication not implemented' };
-  }
-
-  async signInWithPassword(params: SignInWithPasswordParams): Promise<{ error?: string }> {
-    const { email, password } = params;
-
-    // Make API request
-
-    // We do not handle the API, so we'll check if the credentials match with the hardcoded ones.
-    if (email !== 'sofia@devias.io' || password !== 'Secret1') {
-      return { error: 'Invalid credentials' };
+  // The login response is the signed-in user, so callers need no second request to know it.
+  async signIn(params: SignInParams): Promise<{ user?: ApiUser; error?: string }> {
+    try {
+      return { user: await api<ApiUser>('/api/auth/login', { method: 'POST', json: params }) };
+    } catch (error) {
+      return { error: errorMessage(error) };
     }
-
-    const token = generateToken();
-    localStorage.setItem('custom-auth-token', token);
-
-    return {};
   }
 
-  async resetPassword(_: ResetPasswordParams): Promise<{ error?: string }> {
-    return { error: 'Password reset not implemented' };
-  }
-
-  async updatePassword(_: ResetPasswordParams): Promise<{ error?: string }> {
-    return { error: 'Update reset not implemented' };
-  }
-
-  async getUser(): Promise<{ data?: User | null; error?: string }> {
-    // Make API request
-
-    // We do not handle the API, so just check if we have a token in localStorage.
-    const token = localStorage.getItem('custom-auth-token');
-
-    if (!token) {
-      return { data: null };
+  async getUser(): Promise<{ data?: ApiUser | null; error?: string }> {
+    try {
+      return { data: await api<ApiUser>('/api/auth/me') };
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        return { data: null };
+      }
+      return { error: errorMessage(error) };
     }
+  }
 
-    return { data: user };
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ error?: string }> {
+    try {
+      await api('/api/auth/password', {
+        method: 'POST',
+        json: { current_password: currentPassword, new_password: newPassword },
+      });
+      return {};
+    } catch (error) {
+      return { error: errorMessage(error) };
+    }
   }
 
   async signOut(): Promise<{ error?: string }> {
-    localStorage.removeItem('custom-auth-token');
-
-    return {};
+    try {
+      await api('/api/auth/logout', { method: 'POST' });
+      return {};
+    } catch (error) {
+      return { error: errorMessage(error) };
+    }
   }
 }
 

@@ -3,6 +3,8 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import GlobalStyles from '@mui/material/GlobalStyles';
 
+import { CompetitionProvider } from '@/contexts/competition-context';
+import { NotifyProvider } from '@/contexts/notify-context';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { MainNav } from '@/components/dashboard/layout/main-nav';
 import { SideNav } from '@/components/dashboard/layout/side-nav';
@@ -14,6 +16,8 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps): React.JSX.Element {
   return (
     <AuthGuard>
+      <CompetitionProvider>
+        <NotifyProvider>
       <GlobalStyles
         styles={{
           body: {
@@ -39,12 +43,14 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
         <Box sx={{ display: 'flex', flex: '1 1 auto', flexDirection: 'column', pl: { lg: 'var(--SideNav-width)' } }}>
           <MainNav />
           <main>
-            <Container maxWidth="xl" sx={{ py: '64px' }}>
+            <Container maxWidth="xl" sx={{ py: { xs: '24px', md: '48px' } }}>
               {children}
             </Container>
           </main>
         </Box>
       </Box>
+        </NotifyProvider>
+      </CompetitionProvider>
     </AuthGuard>
   );
 }
