@@ -7,4 +7,4 @@ pytest-cov==7.1.0
 # FastAPI's TestClient needs httpx
 httpx==0.28.1
 # Mutation testing (see mutation.sh)
-mutmut==3.8.0
+mutmut==3.8.1
