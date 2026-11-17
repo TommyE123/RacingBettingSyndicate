@@ -1,10 +1,11 @@
+import datetime as dt
 import json
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from app.models import AuditLog
+from app.models import AuditLog, Slip
 
 from .conftest import make_user, sign_in
 
@@ -401,3 +402,18 @@ def test_each_change_to_what_was_bet_clears_the_return(member, festival, change)
     response = member.put(url, json=body)
     assert response.status_code == 200, response.text
     assert response.json()["return_pence"] is None
+
+
+def test_an_edit_to_only_the_horses_moves_updated_at(app, member, festival):
+    slip = post_slip(member, festival, lucky15(festival["tue"])).json()
+    with Session(app.state.engine) as db:
+        db.execute(
+            update(Slip)
+            .where(Slip.id == slip["id"])
+            .values(updated_at=dt.datetime(2020, 1, 1, tzinfo=dt.UTC))
+        )
+        db.commit()
+    body = lucky15(festival["tue"])
+    body["selections"][0]["horse_name"] = "Quilixios II"
+    edited = member.put(f"/api/slips/{slip['id']}", json=body).json()
+    assert edited["updated_at"] > "2020-01-02"

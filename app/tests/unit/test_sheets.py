@@ -247,3 +247,16 @@ def test_photo_sent_after_transaction_and_revalidated(app, member, festival, mon
     response = member.get(f"/api/sheets/{sheet['id']}/image")
     assert response.status_code == 200
     assert response.headers["cache-control"] == "private, no-cache"
+
+
+def test_unremovable_photo_does_not_fail_delete(member, festival, monkeypatch, caplog):  # noqa: F811
+    sheet = upload(member, festival).json()
+
+    def stuck(*_args, **_kwargs):
+        raise PermissionError("read-only disk")
+
+    monkeypatch.setattr(sheets_router.Path, "unlink", stuck)
+    with caplog.at_level("ERROR", logger=sheets_router.__name__):
+        assert member.delete(f"/api/sheets/{sheet['id']}").status_code == 204
+    assert member.get(f"/api/sheets/{sheet['id']}").status_code == 404
+    assert f"after deleting sheet {sheet['id']}" in caplog.text

@@ -392,6 +392,9 @@ def update_slip(slip_id: int, body: SlipIn, user: CurrentUser, db: DbSession) ->
     check_budget(db, slip, competition, body.confirm_over_budget)
     after = slip_summary(slip)
     if after != before:
+        # Replacing only the selections leaves the slip row untouched, so its onupdate
+        # would not run: set the time here so every real edit moves it.
+        slip.updated_at = utcnow()
         changes = {
             key: {"from": before[key], "to": after[key]}
             for key in after
