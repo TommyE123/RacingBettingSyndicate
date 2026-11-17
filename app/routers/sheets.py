@@ -5,6 +5,7 @@ from the file's own first bytes. Files are stored under random names in the uplo
 directory, never under a name the client chose.
 """
 
+import logging
 import secrets
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api", tags=["sheets"])
+logger = logging.getLogger(__name__)
 
 MAX_IMAGE_BYTES = 15 * 1024 * 1024
 
@@ -295,4 +297,9 @@ def delete_sheet(sheet_id: int, request: Request, user: CurrentUser, db: DbSessi
     )
     db.delete(sheet)
     db.commit()
-    (upload_dir(request) / filename).unlink(missing_ok=True)
+    # The sheet is gone and recorded, so a file that cannot be removed must not turn
+    # that into an error (a retry would only find no sheet): log it for tidying up.
+    try:
+        (upload_dir(request) / filename).unlink(missing_ok=True)
+    except OSError:
+        logger.exception("Could not remove photo %s after deleting sheet %s", filename, sheet_id)

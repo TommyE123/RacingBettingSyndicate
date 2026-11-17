@@ -206,9 +206,13 @@ def test_audit_log_is_admin_only_newest_first_and_filterable(admin, member):
     only_users = admin.get("/api/admin/audit", params={"entity_type": "user", "limit": 2}).json()
     assert len(only_users) == 2
     assert all(row["entity_type"] == "user" for row in only_users)
+    expected_older = [row["id"] for row in rows if row["id"] < rows[0]["id"]]
+    assert expected_older
     older = admin.get("/api/admin/audit", params={"before_id": rows[0]["id"]}).json()
-    assert all(row["id"] < rows[0]["id"] for row in older)
+    assert [row["id"] for row in older] == expected_older
+    expected_mine = [row["id"] for row in rows if row["actor_user_id"] == 2]
+    assert expected_mine
     mine = admin.get("/api/admin/audit", params={"actor_user_id": 2}).json()
-    assert all(row["actor_user_id"] == 2 for row in mine)
+    assert [row["id"] for row in mine] == expected_mine
     bootstrapped = next(row for row in rows if row["action"] == "user.bootstrapped")
     assert bootstrapped["actor_name"] is None
