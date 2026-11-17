@@ -117,3 +117,10 @@ def test_bootstrap_password_too_long_to_sign_in_with_is_refused_at_start_up():
     assert Settings(bootstrap_admin_password="p" * 128).bootstrap_admin_password == "p" * 128
     with pytest.raises(ValueError, match="at most 128 characters"):
         Settings(bootstrap_admin_password="p" * 129)
+
+
+def test_upload_dir_setting(monkeypatch):
+    monkeypatch.setenv("RBS_UPLOAD_DIR", "/srv/sheets")
+    assert Settings.from_env().upload_dir == "/srv/sheets"
+    monkeypatch.delenv("RBS_UPLOAD_DIR")
+    assert Settings.from_env().upload_dir == "/data/uploads"

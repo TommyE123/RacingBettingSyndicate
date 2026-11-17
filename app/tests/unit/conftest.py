@@ -13,13 +13,14 @@ MEMBER_PASSWORD = "member-password"
 
 
 @pytest.fixture
-def app():
+def app(tmp_path):
     return create_app(
         Settings(
             database_url="sqlite://",
             bootstrap_admin_username=ADMIN_USERNAME,
             bootstrap_admin_password=ADMIN_PASSWORD,
             cookie_secure=False,
+            upload_dir=str(tmp_path / "uploads"),
         )
     )
 

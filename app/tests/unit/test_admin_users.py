@@ -192,3 +192,27 @@ def test_a_demoted_inactive_admin_can_be_changed_freely(admin):
     admin.patch(f"/api/admin/users/{spare['id']}", json={"is_active": False})
     response = admin.patch(f"/api/admin/users/{spare['id']}", json={"role": "member"})
     assert response.status_code == 200
+
+
+def test_audit_log_is_admin_only_newest_first_and_filterable(admin, member):
+    assert member.get("/api/admin/audit").status_code == 403
+    rows = admin.get("/api/admin/audit").json()
+    ids = [row["id"] for row in rows]
+    assert ids == sorted(ids, reverse=True)
+    assert {row["action"] for row in rows} >= {"user.bootstrapped", "user.created", "auth.login"}
+    created = next(row for row in rows if row["action"] == "user.created")
+    assert created["actor_name"] == ADMIN_USERNAME
+    assert created["detail"] == {"role": "member", "username": "maurizio"}
+    only_users = admin.get("/api/admin/audit", params={"entity_type": "user", "limit": 2}).json()
+    assert len(only_users) == 2
+    assert all(row["entity_type"] == "user" for row in only_users)
+    expected_older = [row["id"] for row in rows if row["id"] < rows[0]["id"]]
+    assert expected_older
+    older = admin.get("/api/admin/audit", params={"before_id": rows[0]["id"]}).json()
+    assert [row["id"] for row in older] == expected_older
+    expected_mine = [row["id"] for row in rows if row["actor_user_id"] == 2]
+    assert expected_mine
+    mine = admin.get("/api/admin/audit", params={"actor_user_id": 2}).json()
+    assert [row["id"] for row in mine] == expected_mine
+    bootstrapped = next(row for row in rows if row["action"] == "user.bootstrapped")
+    assert bootstrapped["actor_name"] is None
