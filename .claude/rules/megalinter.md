@@ -4,8 +4,8 @@ How to handle MegaLinter failures and findings in pull requests.
 
 ## When MegaLinter fails
 
-MegaLinter is configured in `.mega-linter.yml` and runs as part of CI on PRs to `main`. When a PR
-triggers MegaLinter failures:
+MegaLinter is configured in `.linter-rules/.mega-linter.yml` and runs as part of CI on PRs to
+`main`. When a PR triggers MegaLinter failures:
 
 1. **Inspect the reported findings** — read the MegaLinter check output to identify what failed and
    why.
@@ -23,9 +23,9 @@ triggers MegaLinter failures:
    branch only when being behind `main` actually matters.
 7. **Commit and push the fixes** — commit and push the completed, validated changes, following the
    commit and push policy in `CLAUDE.md`.
-8. **Do not modify `.mega-linter.yml` to suppress PR findings** — do not weaken checks, add
-   exclusions, or disable linters to make this PR's own findings go away. A configuration change
-   the task explicitly asks for is legitimate and is not covered by this rule.
+8. **Do not modify `.linter-rules/.mega-linter.yml` to suppress PR findings** — do not weaken
+   checks, add exclusions, or disable linters to make this PR's own findings go away. A
+   configuration change the task explicitly asks for is legitimate and is not covered by this rule.
 
 ## Do not game MegaLinter
 
@@ -40,8 +40,8 @@ approaches include:
 - Altering coverage thresholds to pass codecov checks
 - Using other CI bypass techniques
 
-The existing `.mega-linter.yml` baseline and its handling of pre-existing findings must be
-preserved, unless the task explicitly asks for a configuration change.
+The existing `.linter-rules/.mega-linter.yml` baseline and its handling of pre-existing findings
+must be preserved, unless the task explicitly asks for a configuration change.
 
 ## Example workflow
 

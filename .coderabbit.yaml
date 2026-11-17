@@ -4,6 +4,12 @@ language: en-GB
 reviews:
   review_status: false
   collapse_walkthrough: false
+  finishing_touches:
+    docstrings:
+      enabled: false
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
 
   path_filters:
     - "!**/*.lock"

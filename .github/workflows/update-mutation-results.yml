@@ -22,6 +22,12 @@ on:
 permissions:
   contents: read
 
+# One refresh at a time: a second push to main waits, so two runs never race to open the
+# badge pull request.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 env:
   BADGE_FILE: .github/badges/mutation.json
 
