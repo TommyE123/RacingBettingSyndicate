@@ -7,9 +7,8 @@ export interface NavItemConfig {
   icon?: string;
   href?: string;
   items?: NavItemConfig[];
+  adminOnly?: boolean;
   // Matcher cannot be a function in order
   // to be able to use it on the server.
-  // If you need to match multiple paths,
-  // can extend it to accept multiple matchers.
   matcher?: { type: 'startsWith' | 'equals'; href: string };
 }

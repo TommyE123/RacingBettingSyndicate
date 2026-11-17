@@ -16,5 +16,6 @@ This is a one-time scaffold. It is not tracked as an upstream dependency and is 
 synchronised with upstream: we maintain this copy ourselves.
 
 The upstream `.git` directory was removed so the code is part of this repository's history.
-The only file added or replaced is `Dockerfile`, which builds the kit from its pnpm lockfile
-and serves it with `next start` (the kit has no `output: "standalone"`).
+`Dockerfile` builds the kit from its pnpm lockfile and serves it with `next start` (the kit
+has no `output: "standalone"`). The kit's layout, theme and core components are kept; its
+demo pages, sign-up and fake sign-in were replaced by the syndicate's own pages.

@@ -1,8 +1,3 @@
-export interface User {
-  id: string;
-  name?: string;
-  avatar?: string;
-  email?: string;
+import type { ApiUser } from './api';
 
-  [key: string]: unknown;
-}
+export type User = ApiUser;
