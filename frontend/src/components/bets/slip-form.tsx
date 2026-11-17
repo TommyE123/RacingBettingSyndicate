@@ -577,6 +577,13 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
           </CardContent>
         </Card>
 
+        {slip && slip.return_pence !== null ? (
+          <Alert severity="info">
+            This bet&apos;s return of {formatPence(slip.return_pence)} is already entered. Changing the stake, bet
+            type, each way or a horse&apos;s day clears it so it can be entered again; correcting a name, race time
+            or note keeps it.
+          </Alert>
+        ) : null}
         {error ? <Alert severity="error">{error}</Alert> : null}
         <Divider />
         <Stack direction="row" spacing={2} sx={{ justifyContent: 'flex-end' }}>
