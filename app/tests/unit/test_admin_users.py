@@ -197,7 +197,8 @@ def test_a_demoted_inactive_admin_can_be_changed_freely(admin):
 def test_audit_log_is_admin_only_newest_first_and_filterable(admin, member):
     assert member.get("/api/admin/audit").status_code == 403
     rows = admin.get("/api/admin/audit").json()
-    assert rows[0]["id"] > rows[-1]["id"]
+    ids = [row["id"] for row in rows]
+    assert ids == sorted(ids, reverse=True)
     assert {row["action"] for row in rows} >= {"user.bootstrapped", "user.created", "auth.login"}
     created = next(row for row in rows if row["action"] == "user.created")
     assert created["actor_name"] == ADMIN_USERNAME
