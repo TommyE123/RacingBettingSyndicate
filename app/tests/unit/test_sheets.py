@@ -1,6 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import delete
+from sqlalchemy.orm import Session
 
+from app.models import Entry
 from app.routers import sheets as sheets_router
 from app.routers.sheets import MAX_IMAGE_BYTES, sniff_image
 
@@ -195,3 +198,34 @@ def test_updating_a_sheet_with_nothing_new_records_nothing(member, festival, aud
     for body in ({}, {"stated_total_pence": 500}, {"note": "Day 1"}, {"day_id": festival["tue"]}):
         assert member.patch(url, json=body).status_code == 200
     assert audit_actions() == before
+
+
+def test_a_failed_file_write_leaves_no_partial_photo(app, member, festival, tmp_path, monkeypatch):  # noqa: F811
+    def broken(*_args, **_kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(sheets_router.Path, "replace", broken)
+    client = TestClient(app, cookies=member.cookies)
+    with pytest.raises(OSError, match="disk full"):
+        upload(client, festival)
+    assert list((tmp_path / "uploads").iterdir()) == []
+    assert member.get(f"/api/competitions/{festival['id']}/sheets").json() == []
+
+
+def test_upload_is_checked_again_once_the_photo_arrives(app, member, festival, monkeypatch):  # noqa: F811
+    # The database is free while the photo arrives, so an entry removed meanwhile is caught.
+    real_read = sheets_router._read_photo
+    calls = []
+
+    async def read_then_withdraw(request):
+        data = await real_read(request)
+        calls.append(len(data))
+        with Session(app.state.engine) as db:
+            member_entry = (Entry.competition_id == festival["id"], Entry.user_id == 2)
+            db.execute(delete(Entry).where(*member_entry))
+            db.commit()
+        return data
+
+    monkeypatch.setattr(sheets_router, "_read_photo", read_then_withdraw)
+    assert upload(member, festival).status_code == 409
+    assert calls == [len(JPEG)]

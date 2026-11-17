@@ -35,8 +35,10 @@ The racecard and automatic settlement are not built, and the web UI is not wired
 ```bash
 mkdir -p data
 pip install -r requirements-dev.txt
-RBS_DATABASE_URL=sqlite:///./data/rbs.sqlite3 RBS_ADMIN_USERNAME=admin \
-  RBS_ADMIN_PASSWORD=change-me-please RBS_COOKIE_SECURE=false python -m app.main
+RBS_DATABASE_URL=sqlite:///./data/rbs.sqlite3 \
+  RBS_UPLOAD_DIR=./data/uploads RBS_ADMIN_USERNAME=admin \
+  RBS_ADMIN_PASSWORD=change-me-please RBS_COOKIE_SECURE=false \
+  python -m app.main
 ```
 
 The API is then on <http://localhost:8420>, with interactive documentation at `/docs`.

@@ -158,6 +158,9 @@ def standings(
             for row in rows
             if row["days"][day_index]["staked_pence"] or row["days"][day_index]["returned_pence"]
         ]
+        if not players:
+            # Only a losing bet from an earlier day settled here, so nobody played this day.
+            continue
         best = max(row["days"][day_index]["profit_pence"] for row in players)
         daily_winners.append(
             {
@@ -348,11 +351,14 @@ def statistics(  # noqa: PLR0912, PLR0915 - one pass that builds many small boar
     horse_slips: Counter[str] = Counter()
     horses_by_user: dict[int, set[str]] = defaultdict(set)
     for slip in slips:
+        on_this_slip: set[str] = set()
         for name in slip.horses:
             key = horse_key(name)
             if not key:
                 continue
             spellings[key][name.strip()] += 1
+            on_this_slip.add(key)
+        for key in on_this_slip:
             backers[key].add(slip.user_id)
             horse_slips[key] += 1
             horses_by_user[slip.user_id].add(key)
