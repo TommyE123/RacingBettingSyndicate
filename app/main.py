@@ -13,7 +13,7 @@ from app import audit
 from app.config import Settings
 from app.db import Base, make_engine
 from app.models import Role, User
-from app.routers import admin, auth, competitions
+from app.routers import admin, auth, bets, competitions, sheets
 from app.security import hash_password
 
 if TYPE_CHECKING:
@@ -71,6 +71,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth.router)
     app.include_router(admin.router)
     app.include_router(competitions.router)
+    app.include_router(bets.router)
+    app.include_router(sheets.router)
     return app
 
 

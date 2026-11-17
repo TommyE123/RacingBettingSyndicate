@@ -2,7 +2,7 @@
 
 ## Project
 
-RacingBettingSyndicate is a racing tournament betting, league management and results automation platform. The FastAPI (Python) backend lives in `app/` (tests in `app/tests/unit/` and `app/tests/integration/`); the Next.js (App Router) UI lives in `frontend/`. Each has its own image (`Dockerfile`, `frontend/Dockerfile`), run together by `docker-compose.yml`. The frontend is the unmodified Devias Kit Free baseline (see `frontend/SOURCE.md`); the backend so far covers sign-in, users, competitions, days and entries (no bets, racecard or settlement yet), and the frontend is not wired to it, so read what actually exists before assuming a module, route or script. Betting, money, league standings and results automation need particular care: correctness and auditability matter more than speed.
+RacingBettingSyndicate is a racing tournament betting, league management and results automation platform. The FastAPI (Python) backend lives in `app/` (tests in `app/tests/unit/` and `app/tests/integration/`); the Next.js (App Router) UI lives in `frontend/`. Each has its own image (`Dockerfile`, `frontend/Dockerfile`), run together by `docker-compose.yml`. The frontend is the unmodified Devias Kit Free baseline (see `frontend/SOURCE.md`); the backend covers sign-in, users, competitions, days, entries, bet slips, sheet photos, declared returns, standings and stats (no racecard or automatic settlement), and the frontend is not wired to it yet, so read what actually exists before assuming a module, route or script. Betting, money, league standings and results automation need particular care: correctness and auditability matter more than speed.
 
 ## Commands
 

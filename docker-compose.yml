@@ -38,6 +38,9 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    environment:
+      # The web UI passes /api requests to the backend over the Compose network.
+      - BACKEND_URL=http://backend:8420
     ports:
       - "3420:3420" # Web UI
 

@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 
 DEFAULT_DATABASE_URL = "sqlite:////data/rbs.sqlite3"
+DEFAULT_UPLOAD_DIR = "/data/uploads"
 # The longest password the sign-in request accepts (see app/schemas.py).
 MAX_PASSWORD_LENGTH = 128
 
@@ -17,6 +18,8 @@ class Settings:
     # Send the session cookie over HTTPS only. Turn off for plain-HTTP local use.
     cookie_secure: bool = True
     session_days: int = 30
+    # Where photos of bet sheets are kept. Created on the first upload.
+    upload_dir: str = DEFAULT_UPLOAD_DIR
 
     def __post_init__(self) -> None:
         password = self.bootstrap_admin_password
@@ -31,4 +34,5 @@ class Settings:
             bootstrap_admin_username=os.environ.get("RBS_ADMIN_USERNAME") or None,
             bootstrap_admin_password=os.environ.get("RBS_ADMIN_PASSWORD") or None,
             cookie_secure=os.environ.get("RBS_COOKIE_SECURE", "true").strip().lower() != "false",
+            upload_dir=os.environ.get("RBS_UPLOAD_DIR", DEFAULT_UPLOAD_DIR),
         )
