@@ -42,7 +42,7 @@ export function UsersView(): React.JSX.Element {
   );
 }
 
-// 64 short racing words, so each pick is 6 bits: four words plus two digits is about 31 bits
+// 64 short racing words, so each pick is 6 bits: five words plus two digits is about 36 bits
 // from a secure random source, yet still easy to read out to someone. Members can change it.
 const WORDS = [
   'ascot', 'bay', 'bet', 'bit', 'bolt', 'bridle', 'canter', 'cap', 'chase', 'cheek', 'clerk', 'colt',
@@ -54,8 +54,6 @@ const WORDS = [
 ];
 
 function suggestPassword(): string {
-  // Five words from 64 (30 bits, unbiased as 256 is a multiple of 64) plus two digits,
-  // about 36 bits in all, while staying easy to read aloud and type on a phone.
   const random = globalThis.crypto.getRandomValues(new Uint8Array(7));
   const words = Array.from(random.slice(0, 5), (byte) => WORDS[byte % WORDS.length]);
   const digits = String((random[5] * 256 + random[6]) % 100).padStart(2, '0');
