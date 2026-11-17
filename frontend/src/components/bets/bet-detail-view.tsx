@@ -39,7 +39,7 @@ import { canManage, SelectionsList, StatusChip } from './slip-view';
 export function BetDetailView(): React.JSX.Element {
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
-  const { version, dayById, bump, isLoading: competitionLoading, latestChoice } = useCompetition();
+  const { version, dayById, bump, isLoading: competitionLoading, latestChoice, competition, selectedId } = useCompetition();
   const { user, isAdmin } = useUser();
   const notify = useNotify();
   const slip = useApi<Slip>(Number.isFinite(id) ? `/api/slips/${id}` : null, [version]);
@@ -50,11 +50,13 @@ export function BetDetailView(): React.JSX.Element {
   const [restoreWarning, setRestoreWarning] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   // Changes need this bet's competition to be the one selected, and not mid-switch: while
-  // another loads, the previous one's details are still in place.
+  // another loads, or after it failed to load, the previous one's details are still in place.
   const editable = slip.data
     ? canManage(slip.data, user?.id, isAdmin) &&
       dayById(slip.data.day_id) !== undefined &&
-      !competitionLoading
+      !competitionLoading &&
+      competition !== null &&
+      competition.id === selectedId
     : false;
 
   // Switching competitions closes the editor and any open return, void or restore prompt,

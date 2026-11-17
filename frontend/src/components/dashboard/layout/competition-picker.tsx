@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import { useCompetition } from '@/contexts/competition-context';
 
 export function CompetitionPicker(): React.JSX.Element {
-  const { competitions, competition, select } = useCompetition();
+  const { competitions, competition, selectedId, select } = useCompetition();
 
   return (
     <Box
@@ -42,7 +42,9 @@ export function CompetitionPicker(): React.JSX.Element {
             '& .MuiSelect-select': { p: 0, pr: '24px !important' },
             '& .MuiSvgIcon-root': { color: 'var(--mui-palette-neutral-400)' },
           }}
-          value={competition?.id ?? ''}
+          // Show the competition chosen, not the one loaded: after a failed switch they differ,
+          // and showing the old one would make picking it again a no-op.
+          value={selectedId ?? competition?.id ?? ''}
           variant="outlined"
         >
           {competitions.map((item) => (

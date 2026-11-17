@@ -19,6 +19,9 @@ export interface CompetitionContextValue {
   // The competition most recently chosen, even while its details are still loading.
   // Work that finishes later checks this before acting on the competition it started in.
   latestChoice: () => number | null;
+  // The same choice as state, so the picker shows it and pages re-render when it changes.
+  // It differs from competition?.id while a switch loads, or after a switch failed.
+  selectedId: number | null;
   // Bumped whenever bets change, so pages can reload what they show.
   version: number;
   bump: () => void;
@@ -60,6 +63,11 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
   // The competition most recently chosen, read when refreshing so a refresh started
   // before a newer choice reloads that newer choice, not the one it captured.
   const chosenId = React.useRef<number | null>(null);
+  const [selectedId, setSelectedId] = React.useState<number | null>(null);
+  const choose = React.useCallback((id: number | null) => {
+    chosenId.current = id;
+    setSelectedId(id);
+  }, []);
 
   const load = React.useCallback(
     async (preferredId: number | null): Promise<void> => {
@@ -84,13 +92,13 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
         const chosen =
           list.find((item) => item.id === wanted) ?? list.find((item) => item.entered) ?? list[0] ?? null;
         if (chosen) {
-          chosenId.current = chosen.id;
+          choose(chosen.id);
           const detail = await api<CompetitionDetail>(`/api/competitions/${chosen.id}`);
           if (isCurrent()) {
             setCompetition(detail);
           }
         } else {
-          chosenId.current = null;
+          choose(null);
           setCompetition(null);
         }
       } catch (error_) {
@@ -103,7 +111,7 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
         }
       }
     },
-    [user]
+    [user, choose]
   );
 
   React.useEffect(() => {
@@ -114,14 +122,14 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
 
   const select = React.useCallback(
     (id: number) => {
-      chosenId.current = id;
+      choose(id);
       storeId(id);
       setIsLoading(true);
       load(id).catch(() => {
         // load reports its own errors
       });
     },
-    [load]
+    [load, choose]
   );
 
   const refresh = React.useCallback(async () => {
@@ -147,13 +155,14 @@ export function CompetitionProvider({ children }: { children: React.ReactNode })
       select,
       refresh,
       latestChoice,
+      selectedId,
       version,
       bump,
       dayById: (id: number) => days.get(id),
       nameOf: (userId: number) => names.get(userId) ?? (userId === user?.id ? user.display_name : `#${userId}`),
       isEntered: Boolean(user && competition?.entrants.some((entrant) => entrant.user_id === user.id)),
     };
-  }, [competitions, competition, betTypes, isLoading, error, select, refresh, latestChoice, version, bump, user]);
+  }, [competitions, competition, betTypes, isLoading, error, select, refresh, latestChoice, selectedId, version, bump, user]);
 
   return <CompetitionContext.Provider value={value}>{children}</CompetitionContext.Provider>;
 }

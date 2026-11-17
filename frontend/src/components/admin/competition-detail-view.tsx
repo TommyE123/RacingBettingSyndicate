@@ -217,6 +217,7 @@ function CompetitionDetailPage(): React.JSX.Element {
               <CardContent sx={{ pt: 0 }}>
                 <Stack spacing={2}>
                   <TextField
+                    disabled={locked}
                     label="Name"
                     onChange={(event) => {
                       setName(event.target.value);
@@ -224,6 +225,7 @@ function CompetitionDetailPage(): React.JSX.Element {
                     value={name}
                   />
                   <MoneyField
+                    disabled={locked}
                     helperText="What each person must bet over the festival"
                     label="Budget each"
                     onChange={(text) => {
@@ -274,6 +276,7 @@ function CompetitionDetailPage(): React.JSX.Element {
               <CardContent>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                   <TextField
+                    disabled={locked}
                     label="Date"
                     onChange={(event) => {
                       setNewDate(event.target.value);
@@ -283,6 +286,7 @@ function CompetitionDetailPage(): React.JSX.Element {
                     value={newDate}
                   />
                   <TextField
+                    disabled={locked}
                     label="Label (optional)"
                     onChange={(event) => {
                       setNewLabel(event.target.value);
