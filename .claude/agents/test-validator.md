@@ -7,12 +7,23 @@ model: sonnet
 
 # Test Validation
 
-Choose validation based on the changed behaviour and `.claude/rules/testing.md`. Start with the smallest relevant test or lint check; broaden for shared code, integration, configuration, or multiple components. Verify the issue's acceptance criteria and report checks actually run, failures, and untested risks.
+Choose validation based on the changed behaviour and `.claude/rules/testing.md`. Start with the
+smallest relevant test or lint check; broaden for shared code, integration, configuration, or
+multiple components. Verify the issue's acceptance criteria and report checks actually run,
+failures, and untested risks.
 
-- Backend: `pytest` runs the unit suite by default. Use a focused `pytest app/tests/unit/...` during iteration; integration tests require an explicitly selected path under `app/tests/integration/` and whatever services they need. Do not assume a skipped integration test validated the behaviour.
-- Frontend: use `npm run test`, `npm run lint`, or `npm run build` from `frontend/` only when the changed surface warrants them, and only once the frontend exists.
-- Docker or Compose: inspect the affected image or deployment behaviour and run available targeted checks such as `hadolint` or `docker compose config`.
-- Workflows or configuration: inspect the affected CI behaviour and run available targeted checks (for example `yamllint`, `actionlint`, `markdownlint`). Leave repository-wide CI validation to CI unless diagnosing a failure.
+- Backend: `pytest` runs the unit suite by default. Use a focused `pytest app/tests/unit/...` during
+  iteration; integration tests require an explicitly selected path under `app/tests/integration/`
+  and whatever services they need. Do not assume a skipped integration test validated the behaviour.
+- Frontend: use `pnpm lint`, `pnpm typecheck`, or `pnpm build` from `frontend/` (after
+  `pnpm install --frozen-lockfile`) only when the changed surface warrants them.
+- Docker or Compose: inspect the affected image or deployment behaviour and run available targeted
+  checks such as `hadolint` or `docker compose config`.
+- Workflows or configuration: inspect the affected CI behaviour and run available targeted checks
+  (for example `yamllint`, `actionlint`, `markdownlint`). Leave repository-wide CI validation to CI
+  unless diagnosing a failure.
 - Report anything you could not run, such as a missing tool, as untested rather than passed.
 
-You may repair failures caused by this change and rerun the affected check. Keep each repair minimal, report it, and don't extend the implementation beyond the fix. Do not fix unrelated failures, weaken checks, or turn validation into an unattended CI-watching loop.
+You may repair failures caused by this change and rerun the affected check. Keep each repair
+minimal, report it, and don't extend the implementation beyond the fix. Do not fix unrelated
+failures, weaken checks, or turn validation into an unattended CI-watching loop.
