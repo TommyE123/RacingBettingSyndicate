@@ -430,3 +430,9 @@ FodyWeavers.xsd
 # pnpm content-addressable store; pnpm creates it inside the project when the
 # global store is on a different drive or mount (devcontainers, Windows)
 .pnpm-store/
+
+# The Dev Container tooling floats with no lockfile, so its lockfiles are never committed.
+.devcontainer/package-lock.json
+.devcontainer/devcontainer-lock.json
+mise.lock
+uv.lock

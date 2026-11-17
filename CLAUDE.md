@@ -17,7 +17,7 @@ RacingBettingSyndicate is a racing tournament betting, league management and res
 
 - Validation scope: follow `.claude/rules/testing.md`. CI is authoritative for repository-wide checks.
 - MegaLinter findings: follow `.claude/rules/megalinter.md`. It covers this repository's lint job, not application architecture.
-- Config checks that need no application code: YAML, Markdown and shell scripts (for example `yamllint`, `markdownlint`, `shellcheck`, `actionlint`, `hadolint`, when installed). The dev tool versions are pinned in `mise.toml` and `.devcontainer/package.json`.
+- Config checks that need no application code: YAML, Markdown and shell scripts (for example `yamllint`, `markdownlint`, `shellcheck`, `actionlint`, `hadolint`, when installed). The local dev tools in `mise.toml` and `.devcontainer/package.json` deliberately float to the latest release with no lockfile; CI uses MegaLinter's bundled versions.
 
 ## Working rules
 
