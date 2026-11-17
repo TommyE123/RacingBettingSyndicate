@@ -1,0 +1,176 @@
+'use client';
+
+import * as React from 'react';
+
+import type { BetType, CompetitionDetail, CompetitionSummary, Day } from '@/types/api';
+import { api, errorMessage } from '@/lib/api';
+import { useUser } from '@/hooks/use-user';
+
+const STORAGE_KEY = 'rbs-competition-id';
+
+export interface CompetitionContextValue {
+  competitions: CompetitionSummary[];
+  competition: CompetitionDetail | null;
+  betTypes: BetType[];
+  isLoading: boolean;
+  error: string | null;
+  select: (id: number) => void;
+  refresh: () => Promise<void>;
+  // The competition most recently chosen, even while its details are still loading.
+  // Work that finishes later checks this before acting on the competition it started in.
+  latestChoice: () => number | null;
+  // The same choice as state, so the picker shows it and pages re-render when it changes.
+  // It differs from competition?.id while a switch loads, or after a switch failed.
+  selectedId: number | null;
+  // Bumped whenever bets change, so pages can reload what they show.
+  version: number;
+  bump: () => void;
+  dayById: (id: number) => Day | undefined;
+  nameOf: (userId: number) => string;
+  isEntered: boolean;
+}
+
+export const CompetitionContext = React.createContext<CompetitionContextValue | undefined>(undefined);
+
+function readStoredId(): number | null {
+  try {
+    const value = globalThis.localStorage?.getItem(STORAGE_KEY);
+    return value ? Number.parseInt(value, 10) : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeId(id: number): void {
+  try {
+    globalThis.localStorage?.setItem(STORAGE_KEY, String(id));
+  } catch {
+    // Storage can be unavailable (private mode); the choice then lasts for this visit only.
+  }
+}
+
+export function CompetitionProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const { user } = useUser();
+  const [competitions, setCompetitions] = React.useState<CompetitionSummary[]>([]);
+  const [competition, setCompetition] = React.useState<CompetitionDetail | null>(null);
+  const [betTypes, setBetTypes] = React.useState<BetType[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [version, setVersion] = React.useState(0);
+  // Each load gets a number; only the latest may update state, so a slow earlier load
+  // can never replace the competition chosen after it.
+  const latestLoad = React.useRef(0);
+  // The competition most recently chosen, read when refreshing so a refresh started
+  // before a newer choice reloads that newer choice, not the one it captured.
+  const chosenId = React.useRef<number | null>(null);
+  const [selectedId, setSelectedId] = React.useState<number | null>(null);
+  const choose = React.useCallback((id: number | null) => {
+    chosenId.current = id;
+    setSelectedId(id);
+  }, []);
+
+  const load = React.useCallback(
+    async (preferredId: number | null): Promise<void> => {
+      if (!user) {
+        return;
+      }
+      latestLoad.current += 1;
+      const thisLoad = latestLoad.current;
+      const isCurrent = (): boolean => thisLoad === latestLoad.current;
+      setError(null);
+      try {
+        const [list, types] = await Promise.all([
+          api<CompetitionSummary[]>('/api/competitions'),
+          api<BetType[]>('/api/bet-types'),
+        ]);
+        if (!isCurrent()) {
+          return;
+        }
+        setCompetitions(list);
+        setBetTypes(types);
+        const wanted = preferredId ?? readStoredId();
+        const chosen =
+          list.find((item) => item.id === wanted) ?? list.find((item) => item.entered) ?? list[0] ?? null;
+        if (chosen) {
+          choose(chosen.id);
+          const detail = await api<CompetitionDetail>(`/api/competitions/${chosen.id}`);
+          if (isCurrent()) {
+            setCompetition(detail);
+          }
+        } else {
+          choose(null);
+          setCompetition(null);
+        }
+      } catch (error_) {
+        if (isCurrent()) {
+          setError(errorMessage(error_));
+        }
+      } finally {
+        if (isCurrent()) {
+          setIsLoading(false);
+        }
+      }
+    },
+    [user, choose]
+  );
+
+  React.useEffect(() => {
+    load(null).catch(() => {
+      // load reports its own errors
+    });
+  }, [load]);
+
+  const select = React.useCallback(
+    (id: number) => {
+      choose(id);
+      storeId(id);
+      setIsLoading(true);
+      load(id).catch(() => {
+        // load reports its own errors
+      });
+    },
+    [load, choose]
+  );
+
+  const refresh = React.useCallback(async () => {
+    await load(chosenId.current);
+    setVersion((value) => value + 1);
+  }, [load]);
+
+  const bump = React.useCallback(() => {
+    setVersion((value) => value + 1);
+  }, []);
+
+  const latestChoice = React.useCallback(() => chosenId.current, []);
+
+  const value = React.useMemo<CompetitionContextValue>(() => {
+    const days = new Map((competition?.days ?? []).map((day) => [day.id, day]));
+    const names = new Map((competition?.entrants ?? []).map((entrant) => [entrant.user_id, entrant.display_name]));
+    return {
+      competitions,
+      competition,
+      betTypes,
+      isLoading,
+      error,
+      select,
+      refresh,
+      latestChoice,
+      selectedId,
+      version,
+      bump,
+      dayById: (id: number) => days.get(id),
+      nameOf: (userId: number) => names.get(userId) ?? (userId === user?.id ? user.display_name : `#${userId}`),
+      isEntered: Boolean(user && competition?.entrants.some((entrant) => entrant.user_id === user.id)),
+    };
+  }, [competitions, competition, betTypes, isLoading, error, select, refresh, latestChoice, selectedId, version, bump, user]);
+
+  return <CompetitionContext.Provider value={value}>{children}</CompetitionContext.Provider>;
+}
+
+export function useCompetition(): CompetitionContextValue {
+  const context = React.useContext(CompetitionContext);
+  if (!context) {
+    throw new Error('useCompetition must be used within a CompetitionProvider');
+  }
+  return context;
+}

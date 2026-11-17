@@ -139,7 +139,12 @@ jobs:
             # The fragile part: Docker here must be the Dev Container's own (Docker-in-Docker)
             # daemon, not the host's.
             echo "== Isolated Docker daemon =="
-            pgrep -x dockerd
+            if ! pgrep -x dockerd >/dev/null; then
+              echo "::error::dockerd is not running inside the Dev Container"
+              # The docker-in-docker feature starts dockerd itself and logs here.
+              sudo tail -n 150 /tmp/dockerd.log || true
+              exit 1
+            fi
             # The host daemon holds rbs-host-isolation-fixture; if this client
             # can see it (or anything else), it is not talking to the isolated daemon.
             if docker ps -a --format '{{.Names}}' | grep -qx rbs-host-isolation-fixture; then

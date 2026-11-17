@@ -2,12 +2,8 @@
 
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import { useColorScheme } from '@mui/material/styles';
-
-import { NoSsr } from '@/components/core/no-ssr';
-
-const HEIGHT = 60;
-const WIDTH = 60;
+import Typography from '@mui/material/Typography';
+import { HorseIcon } from '@phosphor-icons/react/dist/ssr/Horse';
 
 type Color = 'dark' | 'light';
 
@@ -18,16 +14,36 @@ export interface LogoProps {
   width?: number;
 }
 
-export function Logo({ color = 'dark', emblem, height = HEIGHT, width = WIDTH }: LogoProps): React.JSX.Element {
-  let url: string;
-
-  if (emblem) {
-    url = color === 'light' ? '/assets/logo-emblem.svg' : '/assets/logo-emblem--dark.svg';
-  } else {
-    url = color === 'light' ? '/assets/logo.svg' : '/assets/logo--dark.svg';
-  }
-
-  return <Box alt="logo" component="img" height={height} src={url} width={width} />;
+export function Logo({ color = 'dark', emblem, height = 32 }: LogoProps): React.JSX.Element {
+  const text = color === 'light' ? 'var(--mui-palette-common-white)' : 'var(--mui-palette-text-primary)';
+  return (
+    <Box sx={{ alignItems: 'center', display: 'inline-flex', gap: 1, height }}>
+      <Box
+        sx={{
+          alignItems: 'center',
+          bgcolor: 'var(--mui-palette-primary-main)',
+          borderRadius: '8px',
+          color: 'var(--mui-palette-primary-contrastText)',
+          display: 'inline-flex',
+          height,
+          justifyContent: 'center',
+          width: height,
+        }}
+      >
+        <HorseIcon fontSize={height * 0.7} weight="fill" />
+      </Box>
+      {emblem ? null : (
+        <Box sx={{ color: text, lineHeight: 1 }}>
+          <Typography sx={{ color: 'inherit', fontSize: '0.95rem', fontWeight: 700, lineHeight: 1.1 }}>
+            Racing Betting
+          </Typography>
+          <Typography sx={{ color: 'inherit', fontSize: '0.75rem', letterSpacing: '0.12em', opacity: 0.75 }}>
+            SYNDICATE
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
 }
 
 export interface DynamicLogoProps {
@@ -38,19 +54,6 @@ export interface DynamicLogoProps {
   width?: number;
 }
 
-export function DynamicLogo({
-  colorDark = 'light',
-  colorLight = 'dark',
-  height = HEIGHT,
-  width = WIDTH,
-  ...props
-}: DynamicLogoProps): React.JSX.Element {
-  const { colorScheme } = useColorScheme();
-  const color = colorScheme === 'dark' ? colorDark : colorLight;
-
-  return (
-    <NoSsr fallback={<Box sx={{ height: `${height}px`, width: `${width}px` }} />}>
-      <Logo color={color} height={height} width={width} {...props} />
-    </NoSsr>
-  );
+export function DynamicLogo({ colorLight = 'dark', ...props }: DynamicLogoProps): React.JSX.Element {
+  return <Logo color={colorLight} {...props} />;
 }
