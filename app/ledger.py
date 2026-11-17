@@ -82,19 +82,16 @@ def standings(
     slip_count: dict[int, int] = defaultdict(int)
     day_staked: dict[tuple[int, int], int] = defaultdict(int)
     day_returned: dict[tuple[int, int], int] = defaultdict(int)
-    active_days: set[int] = set()
 
     for slip in slips:
         staked[slip.user_id] += slip.stake_pence
         slip_count[slip.user_id] += 1
         day_staked[slip.user_id, slip.day_id] += slip.stake_pence
-        active_days.add(slip.day_id)
         if slip.return_pence is None:
             pending[slip.user_id] += 1
         else:
             returned[slip.user_id] += slip.return_pence
             day_returned[slip.user_id, slip.settle_day_id] += slip.return_pence
-            active_days.add(slip.settle_day_id)
 
     def profit(user_id: int) -> int:
         return returned[user_id] - staked[user_id]
@@ -151,15 +148,13 @@ def standings(
     # did nothing that day are not in the running, so their £0 cannot win it.
     daily_winners = []
     for day_index, day_id in enumerate(day_order):
-        if day_id not in active_days:
-            continue
         players = [
             row
             for row in rows
             if row["days"][day_index]["staked_pence"] or row["days"][day_index]["returned_pence"]
         ]
         if not players:
-            # Only a losing bet from an earlier day settled here, so nobody played this day.
+            # Nobody played this day, even if a losing bet from an earlier day settled here.
             continue
         best = max(row["days"][day_index]["profit_pence"] for row in players)
         daily_winners.append(
