@@ -166,6 +166,23 @@ def slip_summary(slip: Slip) -> dict:
     }
 
 
+def what_was_bet(summary: dict) -> tuple:
+    """The parts of a slip a declared return depends on.
+
+    Changing any of these makes it a different bet, so its return no longer applies.
+    Horse names, race times and notes are left out: correcting their wording does not.
+    """
+    return (
+        summary["day_id"],
+        summary["bet_type"],
+        summary["fold_size"],
+        summary["each_way"],
+        summary["unit_stake_pence"],
+        summary["stake_pence"],
+        [leg[0] for leg in summary["selections"]],
+    )
+
+
 def load_slip(db: Session, slip_id: int) -> Slip:
     slip = db.scalar(
         select(Slip)
@@ -380,6 +397,11 @@ def update_slip(slip_id: int, body: SlipIn, user: CurrentUser, db: DbSession) ->
             for key in after
             if before[key] != after[key]
         }
+        # A return declared for the old bet does not apply to a different one: clear it so
+        # it is entered again. Correcting a horse's name, a race time or a note keeps it.
+        if slip.return_pence is not None and what_was_bet(after) != what_was_bet(before):
+            changes["return_pence"] = {"from": slip.return_pence, "to": None}
+            slip.return_pence = None
         audit.record(db, user, "slip.updated", "slip", slip.id, changes=changes)
     db.commit()
     return slips_out(db, [load_slip(db, slip.id)])[0]
