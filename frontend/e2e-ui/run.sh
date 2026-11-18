@@ -6,6 +6,9 @@
 #   scope: smoke (default), full, auth, betslips, standings or admin
 #   mode:  headless (default), or ui for Playwright UI mode on port 9323
 #
+# Playwright UI listens on 127.0.0.1. Set UI_E2E_UI_HOST=0.0.0.0 to reach it from another
+# machine; anyone who can reach it can read the project's files and run its tests.
+#
 # With UI_E2E_BASE_URL set (CI), the suite runs against a stack something else started. The
 # backend behind it must have started with an empty database and RBS_ADMIN_USERNAME and
 # RBS_ADMIN_PASSWORD equal to UI_E2E_ADMIN_USERNAME and UI_E2E_ADMIN_PASSWORD.
@@ -13,7 +16,8 @@
 # Without it (development), the script starts the dev stack (docker-compose.yml plus
 # docker-compose.dev.yml, project racingbettingsyndicate-dev) with a throwaway database and a
 # generated admin password, runs the suite, prints the stack's logs on failure, and removes the
-# stack only if it started it.
+# stack only if it started it. A lock stops a second such run from replacing the stack (and its
+# admin password) while the first is still using it.
 #
 # Exit codes: 0 all tests passed, 1 a test failed, 2 bad arguments, 3 environment setup failed.
 set -uo pipefail
@@ -23,6 +27,8 @@ readonly MODES="headless ui"
 readonly DEV_PROJECT="racingbettingsyndicate-dev"
 readonly DEV_BASE_URL="http://localhost:3420"
 readonly UI_PORT=9323
+readonly UI_HOST="${UI_E2E_UI_HOST:-127.0.0.1}"
+readonly LOCK_DIR="${TMPDIR:-/tmp}/${DEV_PROJECT}-ui-e2e.lock"
 
 usage() {
   echo "Usage: $0 [scope] [mode]" >&2
@@ -61,6 +67,7 @@ compose=(docker compose --project-name "${DEV_PROJECT}"
   --file "${repo_dir}/docker-compose.yml" --file "${repo_dir}/docker-compose.dev.yml")
 started_stack=false
 dev_stack=false
+held_lock=false
 
 setup_failed() {
   echo "UI E2E setup failed: $*" >&2
@@ -73,8 +80,28 @@ cleanup() {
     echo "Removing the dev stack this run started"
     "${compose[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
   fi
+  if [ "${held_lock}" = true ]; then
+    rm -rf "${LOCK_DIR}"
+  fi
 }
 trap cleanup EXIT
+
+# Takes the dev stack lock, or exits 3 if another live run holds it. A lock left by a run that
+# no longer exists is taken over.
+acquire_lock() {
+  local owner
+  if ! mkdir "${LOCK_DIR}" 2>/dev/null; then
+    owner="$(cat "${LOCK_DIR}/pid" 2>/dev/null || true)"
+    if [ -z "${owner}" ] || kill -0 "${owner}" 2>/dev/null; then
+      setup_failed "another UI E2E run (PID ${owner:-unknown}) is using the dev stack." \
+        "Wait for it to finish, or remove ${LOCK_DIR} if no run is active."
+    fi
+    rm -rf "${LOCK_DIR}"
+    mkdir "${LOCK_DIR}" 2>/dev/null || setup_failed "could not take the lock ${LOCK_DIR}."
+  fi
+  held_lock=true
+  echo "$$" >"${LOCK_DIR}/pid"
+}
 
 if ! command -v pnpm >/dev/null 2>&1; then
   setup_failed "pnpm is not installed. Install it with 'corepack enable' (see CLAUDE.md)."
@@ -101,6 +128,7 @@ if [ -n "${UI_E2E_BASE_URL:-}" ]; then
   fi
 else
   command -v docker >/dev/null 2>&1 || setup_failed "Docker is needed to start the dev stack."
+  acquire_lock
   dev_stack=true
   # A new password each run. Compose recreates the backend when it changes, which also gives
   # it a fresh database, so the bootstrap admin always matches this run.
@@ -131,7 +159,7 @@ export UI_E2E_TAG="@${scope}"
 export UI_E2E_MODE="${mode}"
 args=(exec playwright test --config playwright.ui.config.ts)
 if [ "${mode}" = ui ]; then
-  args+=(--ui --ui-host=0.0.0.0 --ui-port="${UI_PORT}")
+  args+=(--ui --ui-host="${UI_HOST}" --ui-port="${UI_PORT}")
   echo "Playwright UI: http://localhost:${UI_PORT}"
 fi
 

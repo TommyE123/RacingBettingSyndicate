@@ -16,9 +16,19 @@ export default async function globalTeardown(config: FullConfig): Promise<void> 
   try {
     await signInByApi(api, username, password);
     const response = await api.get('/api/admin/users');
+    if (!response.ok()) {
+      throw new Error(`Listing users for cleanup failed with HTTP ${response.status()}.`);
+    }
     const users = (await response.json()) as { id: number; username: string; is_active: boolean }[];
+    const failed: number[] = [];
     for (const user of users.filter((item) => item.username.startsWith(`${prefix}-`) && item.is_active)) {
-      await api.patch(`/api/admin/users/${user.id}`, { data: { is_active: false } });
+      const patched = await api.patch(`/api/admin/users/${user.id}`, { data: { is_active: false } });
+      if (!patched.ok()) {
+        failed.push(user.id);
+      }
+    }
+    if (failed.length > 0) {
+      throw new Error(`Could not deactivate test users with IDs ${failed.join(', ')}.`);
     }
   } finally {
     await api.dispose();

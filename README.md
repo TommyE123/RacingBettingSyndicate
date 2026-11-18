@@ -89,7 +89,10 @@ backend. One script, `frontend/e2e-ui/run.sh [scope] [mode]`, runs them in CI an
 - **Scopes** are tags on the tests: `smoke` (the default), `full` (everything), or one area:
   `auth`, `betslips`, `standings` or `admin`.
 - **Modes**: `headless` (the default, as in CI), or `ui` to watch and debug in Playwright UI
-  mode at <http://localhost:9323>.
+  mode at <http://localhost:9323>. It listens on 127.0.0.1; set `UI_E2E_UI_HOST=0.0.0.0` only
+  to reach it from another machine, since anyone who can reach it can read the project's files.
+- **One run at a time** uses the dev stack: a second run started while one is active exits 3
+  rather than replacing the stack and its admin password.
 - **Exit codes**: 0 passed, 1 a test failed, 2 bad arguments, 3 the environment could not be
   set up (the stack did not start, or the test admin could not sign in).
 - **Test data** is synthetic. The backend starts with an empty, throwaway database and makes

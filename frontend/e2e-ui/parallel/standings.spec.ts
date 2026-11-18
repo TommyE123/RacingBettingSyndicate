@@ -30,6 +30,7 @@ test.describe('standings and stats', () => {
       // Switching competition switches what the pages show.
       await page.getByRole('combobox', { name: 'Competition' }).click();
       await page.getByRole('option', { name: other.name }).click();
+      await expect(page.getByText('Biggest single stake').locator('..')).toContainText('£7.00');
       await page.getByRole('link', { name: 'Leaderboard' }).click();
       await expect(page.getByText('Staked by everyone').locator('..')).toContainText('£7.00');
       await expect(page.getByRole('row', { name: new RegExp(rival.displayName) })).toHaveCount(0);
