@@ -86,18 +86,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Takes the dev stack lock, or exits 3 if another live run holds it. A lock left by a run that
-# no longer exists is taken over.
+# Takes the dev stack lock, or exits 3 if the lock directory already exists. mkdir is atomic, so
+# only one run can win. A lock left by a run that was killed is not taken over automatically,
+# because two runs could both decide it was stale and one would delete the other's new lock.
 acquire_lock() {
   local owner
   if ! mkdir "${LOCK_DIR}" 2>/dev/null; then
     owner="$(cat "${LOCK_DIR}/pid" 2>/dev/null || true)"
-    if [ -z "${owner}" ] || kill -0 "${owner}" 2>/dev/null; then
-      setup_failed "another UI E2E run (PID ${owner:-unknown}) is using the dev stack." \
-        "Wait for it to finish, or remove ${LOCK_DIR} if no run is active."
-    fi
-    rm -rf "${LOCK_DIR}"
-    mkdir "${LOCK_DIR}" 2>/dev/null || setup_failed "could not take the lock ${LOCK_DIR}."
+    setup_failed "another UI E2E run (PID ${owner:-unknown}) may be using the dev stack." \
+      "Wait for it to finish, or remove ${LOCK_DIR} if no run is active."
   fi
   held_lock=true
   echo "$$" >"${LOCK_DIR}/pid"
