@@ -4,16 +4,16 @@
 const { UI_E2E_BASE_URL: baseUrl, UI_E2E_ADMIN_USERNAME: username, UI_E2E_ADMIN_PASSWORD: password } = process.env;
 
 try {
-	const response = await fetch(new URL("/api/auth/login", baseUrl), {
-		method: "POST",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ username, password }),
-	});
-	if (!response.ok) {
-		console.error(`Signing in as ${username} returned HTTP ${response.status}`);
-		process.exitCode = 1;
-	}
+  const response = await fetch(new URL('/api/auth/login', baseUrl), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!response.ok) {
+    console.error(`Signing in as ${username} returned HTTP ${response.status}`);
+    process.exitCode = 1;
+  }
 } catch (error) {
-	console.error(`Could not reach ${baseUrl}: ${String(error.cause ?? error)}`);
-	process.exitCode = 1;
+  console.error(`Could not reach ${baseUrl}: ${String(error.cause ?? error)}`);
+  process.exitCode = 1;
 }
