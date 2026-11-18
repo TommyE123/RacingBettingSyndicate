@@ -18,6 +18,9 @@ services:
       - RBS_ADMIN_PASSWORD=${RBS_ADMIN_PASSWORD:-}
       # Session cookies are HTTPS-only by default. Set to false when serving over plain HTTP.
       - RBS_COOKIE_SECURE=${RBS_COOKIE_SECURE:-true}
+      # Optional Azure AI Vision resource for reading sheet photos (OCR); off unless both are set.
+      - RBS_OCR_ENDPOINT=${RBS_OCR_ENDPOINT:-}
+      - RBS_OCR_KEY=${RBS_OCR_KEY:-}
     healthcheck:
       test:
         [

@@ -1,4 +1,4 @@
-"""Photos of bet sheets: upload, list, view, update and delete.
+"""Photos of bet sheets: upload, list, view, read (OCR), update and delete.
 
 The image is sent as the raw request body with its Content-Type, and its type is checked
 from the file's own first bytes. Files are stored under random names in the upload
@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 
-from app import audit
+from app import audit, ocr
 from app.deps import CurrentUser, DbSession  # noqa: TC001 - FastAPI reads these at runtime
 from app.models import CompetitionDay, Entry, Sheet, Slip, User
 from app.routers.bets import (
@@ -24,7 +24,7 @@ from app.routers.bets import (
     require_manager,
     user_names,
 )
-from app.schemas import SheetOut, SheetUpdate
+from app.schemas import SheetOut, SheetReaderOut, SheetReadOut, SheetUpdate
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -246,6 +246,55 @@ def sheet_image(sheet_id: int, request: Request, _user: CurrentUser, db: DbSessi
         # Sheet ids can be reused after a delete, so a browser must check before reusing a copy.
         headers={"Cache-Control": "private, no-cache", "X-Content-Type-Options": "nosniff"},
     )
+
+
+@router.get("/sheet-reader")
+def sheet_reader(request: Request, _user: CurrentUser) -> SheetReaderOut:
+    """Whether photos can be read automatically, so the bet form knows to offer it."""
+    return SheetReaderOut(enabled=request.app.state.settings.ocr_enabled)
+
+
+@router.post("/sheets/{sheet_id}/read")
+def read_sheet(sheet_id: int, request: Request, user: CurrentUser, db: DbSession) -> SheetReadOut:
+    """The lines of text on the photo, as a draft for the bet form. Nothing is saved."""
+    settings = request.app.state.settings
+    sheet = sheet_or_404(db, sheet_id)
+    # Each read uses up the free allowance, so only those who can enter its bets may read it.
+    require_manager(user, sheet.entry.user_id)
+    path = upload_dir(request) / sheet.filename
+    content_type = sheet.content_type
+    user_id = user.id
+    # The service can take several seconds, so end the transaction (and its write lock) first.
+    # Nothing loaded may be touched after this, as reading it would start a new transaction.
+    db.rollback()
+    endpoint, key = settings.ocr_endpoint, settings.ocr_key
+    if not (endpoint and key):
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, "Reading photos automatically is not set up"
+        )
+    if content_type not in ocr.READABLE_TYPES:
+        raise HTTPException(
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            "This photo's format cannot be read automatically. Type the bets in instead.",
+        )
+    if not path.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "The photo file is missing")
+    try:
+        lines = ocr.read_lines(endpoint, key, path.read_bytes())
+    except ocr.ReaderBusyError:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "The photo reader is busy. Try again in a minute.",
+            headers={"Retry-After": "60"},
+        ) from None
+    except ocr.ReaderError as error:
+        logger.warning("Could not read sheet %s: %s", sheet_id, error)
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY,
+            "The photo could not be read. Try again, or type the bets in.",
+        ) from None
+    logger.info("Read %s lines from sheet %s for user %s", len(lines), sheet_id, user_id)
+    return SheetReadOut(lines=lines)
 
 
 @router.patch("/sheets/{sheet_id}")
