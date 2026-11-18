@@ -14,6 +14,7 @@ What exists so far:
 - bet slips: any UK bet type from a single to a Goliath, plus perms, over horses on one or more
   days; the cost is worked out from the bet type and checked against the budget
 - photos of written bet sheets, with the slips entered from each one totalled against it
+- reading a sheet photo's text (OCR) into the bet form as a draft to check, when set up
 - returns declared per slip by the member or an admin; nothing is settled
   from prices. Changing what was bet (stake, type, each way or a horse's day)
   clears the return so it is entered again; correcting a name, race time or
@@ -32,6 +33,29 @@ The racecard and automatic settlement are not built.
 | `RBS_ADMIN_USERNAME`, `RBS_ADMIN_PASSWORD` | First admin, created only while there are no users                  | unset                         |
 | `RBS_COOKIE_SECURE`                        | Send the session cookie over HTTPS only; set `false` for plain HTTP | `true`                        |
 | `RBS_UPLOAD_DIR`                           | Where bet sheet photos are stored                                   | `/data/uploads`               |
+| `RBS_OCR_ENDPOINT`, `RBS_OCR_KEY`          | Azure AI Vision resource that reads sheet photos (see below)        | unset (reading is off)        |
+
+### Reading sheet photos (OCR)
+
+The "Read from photo" button on the bet form sends the sheet photo to the Read feature of
+[Azure AI Vision](https://learn.microsoft.com/azure/ai-services/computer-vision/concept-ocr)
+and puts the lines it finds into the "Paste a list" box. Handwriting is often misread, so the
+text is only a draft: the person entering the bet checks it against the photo, and nothing is
+saved until they save the bet. Only the sheet's owner or an admin can read a sheet, and HEIC
+photos cannot be read.
+
+To turn it on, create an Azure AI Vision (Computer Vision) resource in the Azure portal and set
+`RBS_OCR_ENDPOINT` to its endpoint (`https://<name>.cognitiveservices.azure.com/`) and
+`RBS_OCR_KEY` to one of its keys. Keep the key out of the repository, for example in a local
+`.env` file. The button stays hidden while either setting is missing.
+
+The free F0 pricing tier is enough for the syndicate: it stops reading once its allowance
+runs out instead of charging, and it limits how many reads it takes each minute (the app asks
+people to try again in a minute when Azure refuses for that reason). To move to the paid S0
+tier, for example on an MSDN or Visual Studio subscription's Azure credit, change the
+resource's pricing tier in the portal, or create an S0 resource and point the two settings at
+it. Nothing in the app depends on the tier. Microsoft plans to retire this Image Analysis 4.0
+API on 25 September 2028.
 
 ### Running locally
 
