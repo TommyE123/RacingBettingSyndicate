@@ -83,7 +83,7 @@ backend. One script, `frontend/e2e-ui/run.sh [scope] [mode]`, runs them in CI an
 | Started by        | `production-smoke-test.yml`, called by `docker-build.yml` | The VS Code task, or `bash frontend/e2e-ui/run.sh`          |
 | Stack             | The images built in the same run                          | `docker-compose.yml` + `docker-compose.dev.yml`, built here |
 | Web UI / backend  | Ports 3421 / 8421                                         | Ports 3420 / 8420                                           |
-| `UI_E2E_BASE_URL` | Set, so the script uses the running stack                 | Unset, so the script starts it (and removes it afterwards)  |
+| `UI_E2E_BASE_URL` | Set, so the script uses the running stack                 | Unset, so the script starts it, and removes it if it did    |
 | Scope and mode    | `full headless`                                           | Picked when the task runs; `smoke headless` by default      |
 
 - **Scopes** are tags on the tests: `smoke` (the default), `full` (everything), or one area:

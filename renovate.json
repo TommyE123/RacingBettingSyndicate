@@ -141,6 +141,12 @@
       "minimumReleaseAge": null
     },
     {
+      "description": "The pnpm version given to pnpm/action-setup in production-smoke-test.yml must match the pnpm pinned in frontend/Dockerfile and .devcontainer/post-create.sh, which Renovate does not track. Moving only the workflow pin (and automerging it as a patch) would make CI install with a different pnpm, so all three are updated together by hand.",
+      "matchManagers": ["github-actions"],
+      "matchDepNames": ["pnpm"],
+      "enabled": false
+    },
+    {
       "description": "Schedule FastAPI updates for Saturdays.",
       "matchManagers": ["pip_requirements"],
       "matchPackageNames": ["fastapi"],

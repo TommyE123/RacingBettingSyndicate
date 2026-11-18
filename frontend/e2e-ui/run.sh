@@ -83,6 +83,15 @@ if [ ! -x "${frontend_dir}/node_modules/.bin/playwright" ]; then
   setup_failed "Playwright is not installed. Run 'pnpm install --frozen-lockfile' in frontend/."
 fi
 
+if ! (cd "${frontend_dir}" && node -e '
+  const { existsSync } = require("node:fs");
+  const { chromium } = require("@playwright/test");
+  process.exit(existsSync(chromium.executablePath()) ? 0 : 1);
+'); then
+  setup_failed "Chromium for Playwright is not installed. Run" \
+    "'pnpm exec playwright install --with-deps chromium' in frontend/."
+fi
+
 export UI_E2E_ADMIN_USERNAME="${UI_E2E_ADMIN_USERNAME:-e2e-admin}"
 
 if [ -n "${UI_E2E_BASE_URL:-}" ]; then
