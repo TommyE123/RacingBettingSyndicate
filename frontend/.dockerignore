@@ -5,3 +5,8 @@ node_modules/
 .env.*
 *.log
 .pnpm-store/
+# The UI E2E suite runs from the source tree, not from the image
+e2e-ui/
+playwright.ui.config.ts
+playwright-report-ui/
+test-results-ui/

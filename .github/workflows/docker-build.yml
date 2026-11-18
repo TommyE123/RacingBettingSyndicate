@@ -3,7 +3,8 @@ name: Docker Build
 # Pull requests build the production images, nothing is pushed:
 #   - build-amd64:     the backend linux/amd64 image, exported as an artifact for the tests.
 #   - smoke-test:      starts that artifact and checks it is healthy (production-smoke-test.yml).
-#   - frontend-image:  builds the Next.js frontend image once a frontend lockfile (package-lock.json or pnpm-lock.yaml) exists.
+#   - frontend-image:  builds the Next.js frontend image once a frontend lockfile (package-lock.json or pnpm-lock.yaml) exists,
+#                      exported as an artifact for the UI E2E suite in the smoke test.
 # No registry or secrets are needed to run the tests, so it works the same for pull requests
 # from forks. Releases are built and pushed by release-please.yml.
 on:
@@ -109,23 +110,30 @@ jobs:
 
   smoke-test:
     name: Production container smoke test
-    needs: build-amd64
+    needs: [build-amd64, frontend-image]
     # success() also looks at ancestors, so a failed `changes` job would skip this job even though
     # the image was built; !cancelled() with an explicit result check does not.
     if: ${{ !cancelled() && needs.build-amd64.result == 'success' }}
     permissions:
       contents: read
     uses: ./.github/workflows/production-smoke-test.yml
+    with:
+      # The UI E2E suite needs the frontend image too. Without it (no frontend yet, or its build
+      # failed, which fails the run anyway) only the backend checks run.
+      ui-e2e: ${{ needs.frontend-image.result == 'success' && needs.frontend-image.outputs.present == 'true' }}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  # Builds the Next.js image (amd64 only, nothing pushed). Skipped until the frontend exists.
+  # Builds the Next.js image (amd64 only, nothing pushed) and exports it as an artifact for the
+  # smoke test. Skipped until the frontend exists.
   frontend-image:
     name: Build the frontend image
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.badge-only != 'true' }}
     runs-on: ubuntu-latest
+    outputs:
+      present: ${{ steps.frontend.outputs.present }}
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
     timeout-minutes: 30
@@ -172,4 +180,14 @@ jobs:
           platforms: linux/amd64
           push: false
           tags: rbs-frontend-test:amd64
+          outputs: type=docker,dest=${{ runner.temp }}/frontend-image.tar
           cache-from: type=gha,scope=rbs-frontend
+
+      - name: Upload the image
+        if: ${{ steps.frontend.outputs.present == 'true' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: docker-image-frontend-amd64
+          path: ${{ runner.temp }}/frontend-image.tar
+          retention-days: 1
+          if-no-files-found: error

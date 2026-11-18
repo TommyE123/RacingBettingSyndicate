@@ -17,6 +17,8 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+# Workflows that pin node-version for actions/setup-node; each pin is in the Node runtime group.
+NODE_WORKFLOWS = ("tests.yml", "production-smoke-test.yml")
 
 
 def _read(*parts: str) -> str:
@@ -72,7 +74,7 @@ def test_python_runtime_versions_are_aligned():
 
 
 def test_node_runtime_versions_are_aligned():
-    """The Node major must be the same in the frontend image, CI and the Dev Container."""
+    """The Node major must be the same in the frontend image, CI workflows and the Dev Container."""
     frontend_dockerfile = _read("frontend", "Dockerfile")
     feature_options = re.search(
         r'"ghcr\.io/devcontainers/features/node:\d+"\s*:\s*\{([^}]*)\}',
@@ -81,9 +83,12 @@ def test_node_runtime_versions_are_aligned():
     feature_version = (
         re.search(r'"version"\s*:\s*"(\d+)"', feature_options.group(1)) if feature_options else None
     )
-    workflow_versions = re.findall(
-        r"^\s*node-version:\s*(\d+)\s*$", _read(".github", "workflows", "tests.yml"), re.MULTILINE
-    )
+    workflow_versions = {
+        workflow: re.findall(
+            r"^\s*node-version:\s*(\d+)\s*$", _read(".github", "workflows", workflow), re.MULTILINE
+        )
+        for workflow in NODE_WORKFLOWS
+    }
 
     # Each FROM line is a separate Renovate update, so each one counts towards the minimum.
     docker_versions = re.findall(
@@ -91,13 +96,15 @@ def test_node_runtime_versions_are_aligned():
     )
     assert docker_versions, "Node version not found in frontend/Dockerfile"
     assert feature_version, "Node version not found in the Dev Container node feature"
-    assert workflow_versions, "node-version not found in tests.yml"
+    for workflow, found in workflow_versions.items():
+        assert found, f"node-version not found in {workflow}"
 
     versions = {"Dev Container": feature_version.group(1)}
     for index, version in enumerate(docker_versions, start=1):
         versions[f"frontend/Dockerfile #{index}"] = version
-    for index, version in enumerate(workflow_versions, start=1):
-        versions[f"tests.yml #{index}"] = version
+    for workflow, found in workflow_versions.items():
+        for index, version in enumerate(found, start=1):
+            versions[f"{workflow} #{index}"] = version
 
     assert len(set(versions.values())) == 1, f"Node versions are inconsistent: {versions}"
     assert _renovate_group_minimum("Node runtime") == len(versions)
@@ -111,6 +118,7 @@ def test_node_runtime_versions_are_aligned():
         ".devcontainer/devcontainer.json",
         ".devcontainer/Dockerfile",
         ".github/workflows/tests.yml",
+        ".github/workflows/production-smoke-test.yml",
         ".linter-rules/.ruff.toml",
         "pyrightconfig.json",
     ],

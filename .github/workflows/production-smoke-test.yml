@@ -6,13 +6,19 @@ name: Production Smoke Test
 # run for the PR that introduces this file. Running as a job in the same
 # pull_request-triggered run avoids that.
 #
-# It tests the linux/amd64 backend image that docker-build.yml's build-amd64 job built from
-# this commit and handed over as an artifact (no registry, no secrets), so it runs the same
-# way for pull requests from forks. It starts the image and checks that the backend serves
-# GET /health. Extend it with API checks, and a browser E2E suite against the frontend, as
-# those are added. Any failing step fails this job.
+# It tests the linux/amd64 images that docker-build.yml built from this commit and handed over
+# as artifacts (no registry, no secrets), so it runs the same way for pull requests from forks.
+# It starts the backend image and checks that it serves GET /health. With ui-e2e, it also
+# starts the frontend image in front of it and runs the full Playwright UI E2E suite through
+# frontend/e2e-ui/run.sh, the same script the "RBS: Run UI E2E" VS Code task uses. Any failing
+# step fails this job.
 on:
   workflow_call:
+    inputs:
+      ui-e2e:
+        description: Also start the frontend image and run the Playwright UI E2E suite.
+        type: boolean
+        default: false
     secrets:
       DOCKERHUB_USERNAME:
         required: false
@@ -26,7 +32,10 @@ jobs:
   smoke-test:
     name: Production container smoke test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    env:
+      UI_E2E_BASE_URL: http://localhost:3421
+      UI_E2E_ADMIN_USERNAME: e2e-admin
 
     steps:
       - name: Download the built image
@@ -38,11 +47,43 @@ jobs:
       - name: Load the built image
         run: docker load --input "${RUNNER_TEMP}/image/image.tar"
 
-      - name: Start the image
+      - name: Download the built frontend image
+        if: ${{ inputs.ui-e2e }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: docker-image-frontend-amd64
+          path: ${{ runner.temp }}/frontend-image
+
+      - name: Load the built frontend image
+        if: ${{ inputs.ui-e2e }}
+        run: docker load --input "${RUNNER_TEMP}/frontend-image/frontend-image.tar"
+
+      # The suite signs in as a synthetic admin, created by the backend's first-admin bootstrap
+      # in the container's empty database. The password is new for every run and masked.
+      - name: Generate the test admin password
+        if: ${{ inputs.ui-e2e }}
         run: |
+          password="$(openssl rand -hex 24)"
+          echo "::add-mask::${password}"
+          echo "UI_E2E_ADMIN_PASSWORD=${password}" >> "$GITHUB_ENV"
+
+      - name: Start the image
+        env:
+          UI_E2E: ${{ inputs.ui-e2e }}
+        run: |
+          docker network create rbs-smoke
+          test_env=()
+          if [ "${UI_E2E}" = true ]; then
+            # The UI is served over plain HTTP here, so the session cookie must not be HTTPS-only.
+            test_env=(-e RBS_COOKIE_SECURE=false
+              -e RBS_ADMIN_USERNAME="${UI_E2E_ADMIN_USERNAME}"
+              -e RBS_ADMIN_PASSWORD="${UI_E2E_ADMIN_PASSWORD}")
+          fi
           docker run -d --name rbs-backend-smoke \
+            --network rbs-smoke \
             -p 8421:8420 \
             -e PYTHONUNBUFFERED=1 \
+            "${test_env[@]}" \
             rbs-backend-test:amd64
           echo "Image: $(docker inspect --format '{{.Config.Image}} ({{.Image}})' rbs-backend-smoke)"
 
@@ -58,13 +99,86 @@ jobs:
           echo "::error::The backend did not become ready within the timeout"
           exit 1
 
+      - name: Start the frontend image
+        if: ${{ inputs.ui-e2e }}
+        run: |
+          docker run -d --name rbs-frontend-smoke \
+            --network rbs-smoke \
+            -p 3421:3420 \
+            -e BACKEND_URL=http://rbs-backend-smoke:8420 \
+            rbs-frontend-test:amd64
+          echo "Image: $(docker inspect --format '{{.Config.Image}} ({{.Image}})' rbs-frontend-smoke)"
+
+      - name: Wait for the frontend to become ready
+        if: ${{ inputs.ui-e2e }}
+        run: |
+          for _ in $(seq 1 30); do
+            if curl -sf -o /dev/null "${UI_E2E_BASE_URL}/auth/sign-in"; then
+              echo "Frontend is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::The frontend did not become ready within the timeout"
+          exit 1
+
+      - name: Checkout the UI E2E suite
+        if: ${{ inputs.ui-e2e }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: frontend
+
+      # pnpm from the start, matching frontend/Dockerfile and the Dev Container (see #6).
+      - name: Set up pnpm
+        if: ${{ inputs.ui-e2e }}
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 12.14.0
+
+      - name: Set up Node.js
+        if: ${{ inputs.ui-e2e }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        if: ${{ inputs.ui-e2e }}
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium for Playwright
+        if: ${{ inputs.ui-e2e }}
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run the UI E2E suite
+        if: ${{ inputs.ui-e2e }}
+        run: bash frontend/e2e-ui/run.sh full headless
+
+      - name: Upload the UI E2E report
+        if: ${{ failure() && inputs.ui-e2e }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-e2e-report
+          path: |
+            frontend/playwright-report-ui/
+            frontend/test-results-ui/
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Diagnostics on failure
         if: failure()
         run: |
           docker ps -a
           docker logs rbs-backend-smoke || true
           docker inspect rbs-backend-smoke || true
+          docker logs rbs-frontend-smoke || true
 
       - name: Clean up
         if: always()
-        run: docker rm -f rbs-backend-smoke 2>/dev/null || true
+        run: |
+          docker rm -f rbs-backend-smoke rbs-frontend-smoke 2>/dev/null || true
+          docker network rm rbs-smoke 2>/dev/null || true

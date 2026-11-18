@@ -71,3 +71,46 @@ pnpm dev -p 3420
 Open <http://localhost:3420> and sign in with the first admin's username and password.
 Browsers only keep the session cookie over plain HTTP when `RBS_COOKIE_SECURE=false`, so set
 that for local use or whenever the site is not served over HTTPS (Compose included).
+
+## UI E2E suite (Playwright)
+
+End-to-end tests in `frontend/e2e-ui/` drive the real web UI in Chromium against a running
+backend. One script, `frontend/e2e-ui/run.sh [scope] [mode]`, runs them in CI and from the
+`RBS: Run UI E2E` VS Code task, so a CI failure reproduces locally with the same command.
+
+|                   | CI                                                        | Development                                                 |
+|-------------------|-----------------------------------------------------------|-------------------------------------------------------------|
+| Started by        | `production-smoke-test.yml`, called by `docker-build.yml` | The VS Code task, or `bash frontend/e2e-ui/run.sh`          |
+| Stack             | The images built in the same run                          | `docker-compose.yml` + `docker-compose.dev.yml`, built here |
+| Web UI / backend  | Ports 3421 / 8421                                         | Ports 3420 / 8420                                           |
+| `UI_E2E_BASE_URL` | Set, so the script uses the running stack                 | Unset, so the script starts it (and removes it afterwards)  |
+| Scope and mode    | `full headless`                                           | Picked when the task runs; `smoke headless` by default      |
+
+- **Scopes** are tags on the tests: `smoke` (the default), `full` (everything), or one area:
+  `auth`, `betslips`, `standings` or `admin`.
+- **Modes**: `headless` (the default, as in CI), or `ui` to watch and debug in Playwright UI
+  mode at <http://localhost:9323>.
+- **Exit codes**: 0 passed, 1 a test failed, 2 bad arguments, 3 the environment could not be
+  set up (the stack did not start, or the test admin could not sign in).
+- **Test data** is synthetic. The backend starts with an empty, throwaway database and makes
+  its first admin from `RBS_ADMIN_USERNAME` and `RBS_ADMIN_PASSWORD`; the script or CI
+  generates a new password for each run. Each test then creates its own users and
+  competition through the admin API, so tests do not depend on each other. Nothing new is
+  switched on in production: the first-admin bootstrap already exists and only runs while the
+  database has no users.
+- **Reports**: `frontend/playwright-report-ui/` and `frontend/test-results-ui/` (gitignored),
+  with screenshots and traces kept only for failing tests. CI uploads them as the
+  `ui-e2e-report` artifact when the suite fails.
+
+To run against a stack you started yourself, point the script at it and give it the admin it
+can use. That admin must be the stack's first admin, created in an empty database:
+
+```bash
+UI_E2E_BASE_URL=http://localhost:3420 UI_E2E_ADMIN_USERNAME=admin \
+  UI_E2E_ADMIN_PASSWORD=change-me-please bash frontend/e2e-ui/run.sh smoke
+```
+
+The script needs `pnpm install --frozen-lockfile` in `frontend/` and Chromium
+(`pnpm exec playwright install --with-deps chromium`), both done by the Dev Container.
+Specs that change state other tests can see go in `frontend/e2e-ui/exclusive/`, which runs
+one test at a time after the rest; everything else goes in `frontend/e2e-ui/parallel/`.
