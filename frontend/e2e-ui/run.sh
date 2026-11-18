@@ -28,7 +28,8 @@ readonly DEV_PROJECT="racingbettingsyndicate-dev"
 readonly DEV_BASE_URL="http://localhost:3420"
 readonly UI_PORT=9323
 readonly UI_HOST="${UI_E2E_UI_HOST:-127.0.0.1}"
-readonly LOCK_DIR="${TMPDIR:-/tmp}/${DEV_PROJECT}-ui-e2e.lock"
+# A fixed path, not TMPDIR, so runs with different TMPDIR values still share one lock.
+readonly LOCK_DIR="/tmp/${DEV_PROJECT}-ui-e2e.lock"
 
 usage() {
   echo "Usage: $0 [scope] [mode]" >&2
