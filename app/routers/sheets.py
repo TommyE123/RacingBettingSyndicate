@@ -263,7 +263,9 @@ def read_sheet(sheet_id: int, request: Request, user: CurrentUser, db: DbSession
     require_manager(user, sheet.entry.user_id)
     path = upload_dir(request) / sheet.filename
     content_type = sheet.content_type
+    user_id = user.id
     # The service can take several seconds, so end the transaction (and its write lock) first.
+    # Nothing loaded may be touched after this, as reading it would start a new transaction.
     db.rollback()
     endpoint, key = settings.ocr_endpoint, settings.ocr_key
     if not (endpoint and key):
@@ -291,7 +293,7 @@ def read_sheet(sheet_id: int, request: Request, user: CurrentUser, db: DbSession
             status.HTTP_502_BAD_GATEWAY,
             "The photo could not be read. Try again, or type the bets in.",
         ) from None
-    logger.info("Read %s lines from sheet %s for user %s", len(lines), sheet_id, user.id)
+    logger.info("Read %s lines from sheet %s for user %s", len(lines), sheet_id, user_id)
     return SheetReadOut(lines=lines)
 
 

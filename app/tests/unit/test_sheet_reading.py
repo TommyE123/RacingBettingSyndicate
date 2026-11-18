@@ -1,6 +1,7 @@
 import logging
 
 import pytest
+from sqlalchemy import event
 
 from app import ocr
 from app.config import Settings
@@ -147,3 +148,27 @@ def test_a_failed_read_is_logged_and_reported(member, festival, monkeypatch, cap
     )
     assert "answered 500" in caplog.text
     assert KEY not in caplog.text
+
+
+def test_no_database_work_follows_the_read(app, member, festival, monkeypatch):  # noqa: F811
+    """The reader is slow, so the request must not take SQLite's write lock again after it."""
+    statements = []
+    done = []
+
+    def fake_read_lines(*_args):
+        done.append(True)
+        return ["1:30 Mystical Power"]
+
+    def record(_conn, _cursor, statement, *_args):
+        if done:
+            statements.append(statement)
+
+    monkeypatch.setattr(ocr, "read_lines", fake_read_lines)
+    sheet = upload(member, festival).json()
+    event.listen(app.state.engine, "before_cursor_execute", record)
+    try:
+        assert member.post(f"/api/sheets/{sheet['id']}/read").status_code == 200
+    finally:
+        event.remove(app.state.engine, "before_cursor_execute", record)
+    assert done
+    assert statements == []
