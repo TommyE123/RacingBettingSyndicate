@@ -1,3 +1,4 @@
+import http.client
 import io
 import json
 import urllib.error
@@ -93,6 +94,7 @@ def http_error(code):
         (http_error(401), ocr.ReaderError, "answered 401"),
         (urllib.error.URLError("no route"), ocr.ReaderError, "URLError"),
         (TimeoutError(), ocr.ReaderError, "TimeoutError"),
+        (http.client.IncompleteRead(b"{"), ocr.ReaderError, "IncompleteRead"),
     ],
 )
 def test_failures_become_reader_errors_without_the_key(monkeypatch, raised, expected, message):

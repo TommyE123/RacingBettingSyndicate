@@ -425,7 +425,7 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                     </Button>
                   ) : null}
                   <Button
-                    disabled={busy}
+                    disabled={busy || reading}
                     onClick={() => {
                       setPhotoDraft(null);
                       setPasteOpen(true);

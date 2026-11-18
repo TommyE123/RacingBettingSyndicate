@@ -51,11 +51,12 @@ To turn it on, create an Azure AI Vision (Computer Vision) resource in the Azure
 
 The free F0 pricing tier is enough for the syndicate: it stops reading once its allowance
 runs out instead of charging, and it limits how many reads it takes each minute (the app asks
-people to try again in a minute when Azure refuses for that reason). To move to the paid S0
-tier, for example on an MSDN or Visual Studio subscription's Azure credit, change the
-resource's pricing tier in the portal, or create an S0 resource and point the two settings at
-it. Nothing in the app depends on the tier. Microsoft plans to retire this Image Analysis 4.0
-API on 25 September 2028.
+people to try again in a minute when Azure refuses for that reason). To move to the paid tier,
+for example on an MSDN or Visual Studio subscription's Azure credit, change the resource's
+pricing tier in the portal to S1 (the paid tier of a Computer Vision resource), or create a paid
+resource and point the two settings at it. A multi-service Azure AI services resource, whose
+paid tier is S0, works too. Nothing in the app depends on the tier. Microsoft plans to retire
+this Image Analysis 4.0 API on 25 September 2028.
 
 ### Running locally
 

@@ -4,6 +4,7 @@ What comes back is only a draft: the bet form shows it to a person, who checks a
 it against the photo before anything is saved. Nothing here writes to the database.
 """
 
+import http.client
 import json
 import urllib.error
 import urllib.request
@@ -43,8 +44,9 @@ def read_lines(endpoint: str, key: str, image: bytes) -> list[str]:
         if error.code == TOO_MANY_REQUESTS:
             raise ReaderBusyError("the service is limiting requests") from error
         raise ReaderError(f"the service answered {error.code}") from error
-    except (OSError, ValueError) as error:
-        # URLError and timeouts are OSErrors; a body that is not JSON is a ValueError.
+    except (OSError, ValueError, http.client.HTTPException) as error:
+        # URLError and timeouts are OSErrors; a body that is not JSON is a ValueError; a reply
+        # cut short (IncompleteRead) is an HTTPException, which urllib leaves unwrapped.
         raise ReaderError(f"no usable answer from the service ({type(error).__name__})") from error
     return lines_from_result(body)
 
