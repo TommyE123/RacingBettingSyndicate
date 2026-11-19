@@ -6,6 +6,7 @@ import GlobalStyles from '@mui/material/GlobalStyles';
 import { CompetitionProvider } from '@/contexts/competition-context';
 import { NotifyProvider } from '@/contexts/notify-context';
 import { AuthGuard } from '@/components/auth/auth-guard';
+import { IosInstallHint } from '@/components/core/pwa/ios-install-hint';
 import { MainNav } from '@/components/dashboard/layout/main-nav';
 import { SideNav } from '@/components/dashboard/layout/side-nav';
 
@@ -44,6 +45,7 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
           <MainNav />
           <main>
             <Container maxWidth="xl" sx={{ py: { xs: '24px', md: '48px' } }}>
+              <IosInstallHint />
               {children}
             </Container>
           </main>
