@@ -155,7 +155,7 @@ fi
 
 export UI_E2E_TAG="@${scope}"
 export UI_E2E_MODE="${mode}"
-args=(exec playwright test --config playwright.ui.config.ts)
+args=(run test:ui-e2e)
 if [ "${mode}" = ui ]; then
   args+=(--ui --ui-host="${UI_HOST}" --ui-port="${UI_PORT}")
   echo "Playwright UI: http://localhost:${UI_PORT}"

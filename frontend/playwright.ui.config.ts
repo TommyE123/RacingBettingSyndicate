@@ -26,6 +26,9 @@ export default defineConfig({
   globalTeardown: './e2e-ui/global-teardown.ts',
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
+  // UI mode runs every test in one project, so one worker keeps tests that change shared state
+  // from overlapping. Headless runs get the same safety from the "exclusive" project.
+  workers: uiMode ? 1 : undefined,
   timeout: 30_000,
   expect: { timeout: 10_000 },
   reporter: isCI
