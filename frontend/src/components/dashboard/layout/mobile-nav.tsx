@@ -34,6 +34,10 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
             bgcolor: 'var(--mui-palette-neutral-950)',
             color: 'var(--mui-palette-common-white)',
             maxWidth: '100%',
+            // The drawer is fixed, so the body's safe-area padding doesn't reach it (notch in landscape).
+            pt: 'env(safe-area-inset-top)',
+            pb: 'env(safe-area-inset-bottom)',
+            pl: 'env(safe-area-inset-left)',
             width: 'var(--MobileNav-width)',
             zIndex: 'var(--MobileNav-zIndex)',
           },

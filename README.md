@@ -71,3 +71,34 @@ pnpm dev -p 3420
 Open <http://localhost:3420> and sign in with the first admin's username and password.
 Browsers only keep the session cookie over plain HTTP when `RBS_COOKIE_SECURE=false`, so set
 that for local use or whenever the site is not served over HTTPS (Compose included).
+
+### Installing the app
+
+The web UI is a Progressive Web App, so members can install it to a phone's home screen or a
+computer and open it full screen like an app.
+
+- Chrome and Edge (Android and desktop) show an **Install app** button in the top bar when the
+  browser offers installation.
+- iOS has no install prompt, so iPhone and iPad users see a dismissible hint: tap Share, then
+  **Add to Home Screen**.
+
+It is made of `frontend/src/app/manifest.ts` (served at `/manifest.webmanifest`, built from
+`config.site` in `frontend/src/config.ts`), the icons in `frontend/public/icons/` (rendered from
+`icon.svg` and `icon-maskable.svg` in the same folder), and the service worker
+`frontend/public/sw.js`, registered by `frontend/src/components/core/pwa/pwa-provider.tsx`. The
+service worker never caches pages or `/api` requests, so no bets, returns or standings are stored
+on the device and signing out leaves nothing behind. It caches only Next's content-hashed build
+files, and shows `frontend/public/offline.html` when a page can't load. Bump `CACHE_VERSION` in
+`sw.js` whenever `offline.html` changes.
+
+The service worker is registered only by production builds. To check installability locally:
+
+```bash
+cd frontend
+pnpm build
+pnpm start -p 3420
+```
+
+Then open <http://localhost:3420> in Chrome and look at DevTools, Application, Manifest. Browsers
+allow installing only over HTTPS, or from `localhost`, so a deployment needs HTTPS for the app to
+be installable (which also suits the default `RBS_COOKIE_SECURE=true`).

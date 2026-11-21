@@ -15,6 +15,7 @@ import { paths } from '@/paths';
 import { useCompetition } from '@/contexts/competition-context';
 import { usePopover } from '@/hooks/use-popover';
 import { useUser } from '@/hooks/use-user';
+import { InstallAppButton } from '@/components/core/pwa/install-app-button';
 
 import { MobileNav } from './mobile-nav';
 import { UserPopover } from './user-popover';
@@ -65,6 +66,7 @@ export function MainNav(): React.JSX.Element {
             </Typography>
           </Stack>
           <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+            <InstallAppButton />
             {isEntered ? (
               <Button
                 component={RouterLink}
