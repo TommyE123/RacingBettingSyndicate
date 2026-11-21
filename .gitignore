@@ -440,3 +440,7 @@ FodyWeavers.xsd
 .devcontainer/devcontainer-lock.json
 mise.lock
 uv.lock
+
+# Playwright UI E2E output (frontend/e2e-ui/run.sh)
+frontend/test-results-ui/
+frontend/playwright-report-ui/

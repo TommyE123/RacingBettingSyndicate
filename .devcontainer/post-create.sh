@@ -25,6 +25,9 @@ if [ -f frontend/pnpm-lock.yaml ]; then
   # pnpm's own config file; an npm_config_store_dir environment variable makes npm warn.
   pnpm config set --global store-dir "${HOME}/.cache/pnpm"
   pnpm install --frozen-lockfile --dir frontend
+  # Chromium for the UI E2E suite (frontend/e2e-ui/run.sh). The browser is kept in ~/.cache,
+  # a persisted volume, so a rebuilt container does not download it again.
+  pnpm --dir frontend exec playwright install --with-deps chromium
 elif [ -f frontend/package-lock.json ]; then
   npm ci --prefer-offline --no-audit --prefix frontend
 fi

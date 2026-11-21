@@ -108,6 +108,7 @@ jobs:
             echo "== Frontend dependencies =="
             test -d frontend/node_modules/next
             (cd frontend && pnpm exec next --version)
+            (cd frontend && pnpm exec playwright --version)
 
             echo "== Development tools =="
             editorconfig-checker --version

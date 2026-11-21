@@ -37,9 +37,19 @@ and auditability matter more than speed.
   `pnpm-lock.yaml`. CI expects the frontend to define `test:coverage`, `lint` and `build` scripts
   and skips the frontend checks until `frontend/package-lock.json` exists; the kit has no such
   lockfile or `test:coverage` script, so those checks currently skip.
+- UI E2E (Playwright, specs in `frontend/e2e-ui/`): `bash frontend/e2e-ui/run.sh [scope] [mode]`,
+  also the `RBS: Run UI E2E` VS Code task. Scopes: `smoke` (default), `full`, `auth`,
+  `betslips`, `standings`, `admin`; modes: `headless` (default) or `ui` (Playwright UI on 9323).
+  Without `UI_E2E_BASE_URL` it starts `docker-compose.yml` + `docker-compose.dev.yml` (project
+  `racingbettingsyndicate-dev`, ports 3420/8420, throwaway database, generated admin password);
+  with it, it uses that stack and needs `UI_E2E_ADMIN_PASSWORD`. CI runs `full headless` in the
+  smoke test against the built images (frontend 3421, backend 8421). Exit codes: 0 passed, 1 a
+  test failed, 2 bad arguments, 3 setup failed. It needs `pnpm install --frozen-lockfile` and
+  `pnpm exec playwright install --with-deps chromium` in `frontend/`. See `README.md`.
 - Containers: `docker compose up --build` runs both services. Ports are deliberately unusual
-  (backend 8420, frontend 3420; the CI smoke test uses 8421) so they never clash with other local
-  projects such as docker-autoheal (3000, 3131-3133, 9090, 9091, 9323); keep them distinct.
+  (backend 8420, frontend 3420; the CI smoke test uses 8421 and 3421) so they never clash with other
+  projects such as docker-autoheal (3000, 3131-3133, 9090, 9091); keep them distinct. 9323 is
+  only for Playwright UI mode, as in docker-autoheal.
 - The backend must serve `GET /health` on port 8420 (the Docker health check and smoke test depend
   on it); the frontend image builds from `frontend/pnpm-lock.yaml` with pnpm and serves with
   `next start` on port 3420.

@@ -32,7 +32,7 @@
 
   "waitFor": "postCreateCommand",
 
-  "forwardPorts": [3420, 8420],
+  "forwardPorts": [3420, 8420, 9323],
 
   "portsAttributes": {
     "3420": {
@@ -40,6 +40,9 @@
     },
     "8420": {
       "label": "Backend API (FastAPI)"
+    },
+    "9323": {
+      "label": "Playwright UI"
     }
   },
 
