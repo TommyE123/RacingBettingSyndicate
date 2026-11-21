@@ -1,7 +1,7 @@
 # Next.js (App Router) frontend image, built from the Devias Kit Free baseline (see SOURCE.md).
 # The kit ships a pnpm lockfile and no `output: "standalone"`, so the image installs with pnpm
 # and serves with `next start`.
-FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS builder
+FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS builder
 
 WORKDIR /frontend
 
@@ -14,7 +14,7 @@ RUN pnpm install --frozen-lockfile
 COPY . ./
 RUN pnpm run build && pnpm prune --prod
 
-FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5
 
 LABEL maintainer="Racing Betting Syndicate"
 LABEL description="Racing Betting Syndicate web UI"
