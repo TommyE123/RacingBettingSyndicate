@@ -13,7 +13,7 @@ const FORWARDED_RESPONSE_HEADERS = ['cache-control', 'content-type', 'x-content-
 
 class BodyTooLargeError extends Error {}
 
-async function readBody(request: NextRequest): Promise<Uint8Array | undefined> {
+async function readBody(request: NextRequest): Promise<Uint8Array<ArrayBuffer> | undefined> {
   const declared = Number(request.headers.get('content-length') ?? '0');
   if (declared > MAX_BODY_BYTES) {
     throw new BodyTooLargeError();
@@ -63,7 +63,7 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
   }
 
   const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
-  let body: Uint8Array | undefined;
+  let body: Uint8Array<ArrayBuffer> | undefined;
   if (hasBody) {
     try {
       body = await readBody(request);
