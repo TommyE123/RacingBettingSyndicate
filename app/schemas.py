@@ -223,6 +223,15 @@ class SheetOut(BaseModel):
     created_at: dt.datetime
 
 
+class SheetReaderOut(BaseModel):
+    enabled: bool
+
+
+class SheetReadOut(BaseModel):
+    # A draft for a person to check against the photo, never saved as it is.
+    lines: list[str]
+
+
 class SheetUpdate(_Strict):
     day_id: int | None = None
     stated_total_pence: Annotated[int, Field(ge=0, le=100_000_000)] | None = None

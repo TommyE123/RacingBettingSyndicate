@@ -25,9 +25,10 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { ClipboardTextIcon } from '@phosphor-icons/react/dist/ssr/ClipboardText';
 import { PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
+import { ScanIcon } from '@phosphor-icons/react/dist/ssr/Scan';
 import { TrashIcon } from '@phosphor-icons/react/dist/ssr/Trash';
 
-import type { Slip, SlipInput, Standings } from '@/types/api';
+import type { SheetRead, SheetReader, Slip, SlipInput, Standings } from '@/types/api';
 import { api, ApiError, errorMessage } from '@/lib/api';
 import { foldName, linesFor, parsePastedHorses } from '@/lib/bets';
 import { dayName, defaultDay } from '@/lib/days';
@@ -104,6 +105,30 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
   const [error, setError] = React.useState<string | null>(null);
   const [overBudget, setOverBudget] = React.useState<string | null>(null);
   const [pasteOpen, setPasteOpen] = React.useState(false);
+  // Text read from the sheet photo, offered as a draft in the paste box. The key starts it afresh.
+  const [photoDraft, setPhotoDraft] = React.useState<{ key: number; text: string } | null>(null);
+  const [reading, setReading] = React.useState(false);
+  const [readError, setReadError] = React.useState<string | null>(null);
+  const canRead = Boolean(sheetId) && !editing && (isAdmin || ownerId === user?.id);
+  const reader = useApi<SheetReader>(canRead ? '/api/sheet-reader' : null);
+
+  async function readPhoto(): Promise<void> {
+    setReading(true);
+    setReadError(null);
+    try {
+      const result = await api<SheetRead>(`/api/sheets/${sheetId}/read`, { method: 'POST' });
+      if (result.lines.length === 0) {
+        setReadError('No writing was found on the photo. Type the bets in instead.');
+        return;
+      }
+      setPhotoDraft((current) => ({ key: (current?.key ?? 0) + 1, text: result.lines.join('\n') }));
+      setPasteOpen(true);
+    } catch (error_) {
+      setReadError(errorMessage(error_));
+    } finally {
+      setReading(false);
+    }
+  }
 
   const standings = useApi<Standings>(competition ? `/api/competitions/${competition.id}/standings` : null, [version]);
 
@@ -384,17 +409,44 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
                     ({rows.length})
                   </Typography>
                 </Typography>
-                <Button
-                  disabled={busy}
-                  onClick={() => {
-                    setPasteOpen(true);
-                  }}
-                  size="small"
-                  startIcon={<ClipboardTextIcon />}
-                >
-                  Paste a list
-                </Button>
+                <Stack direction="row" spacing={1}>
+                  {canRead && reader.data?.enabled ? (
+                    <Button
+                      disabled={busy || reading}
+                      onClick={() => {
+                        readPhoto().catch(() => {
+                          // readPhoto reports its own errors
+                        });
+                      }}
+                      size="small"
+                      startIcon={<ScanIcon />}
+                    >
+                      {reading ? 'Reading the photo...' : 'Read from photo'}
+                    </Button>
+                  ) : null}
+                  <Button
+                    disabled={busy || reading}
+                    onClick={() => {
+                      setPhotoDraft(null);
+                      setPasteOpen(true);
+                    }}
+                    size="small"
+                    startIcon={<ClipboardTextIcon />}
+                  >
+                    Paste a list
+                  </Button>
+                </Stack>
               </Stack>
+              {readError ? (
+                <Alert
+                  onClose={() => {
+                    setReadError(null);
+                  }}
+                  severity="warning"
+                >
+                  {readError}
+                </Alert>
+              ) : null}
               {rows.map((row, index) => {
                 const rowProblem = showErrors ? rowProblems[index] : null;
                 return (
@@ -627,6 +679,9 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
         title="Over the budget"
       />
       <PasteDialog
+        fromPhoto={photoDraft !== null}
+        initialText={photoDraft?.text ?? ''}
+        key={photoDraft?.key ?? 0}
         onClose={() => {
           setPasteOpen(false);
         }}
@@ -644,20 +699,30 @@ export function SlipForm({ slip, sheetId, ownerId, defaultDayId, onSaved, onCanc
 
 function PasteDialog({
   open,
+  initialText,
+  fromPhoto,
   onClose,
   onPaste,
 }: {
   open: boolean;
+  initialText: string;
+  fromPhoto: boolean;
   onClose: () => void;
   onPaste: (rows: { race_time: string; horse_name: string; note: string }[]) => void;
 }): React.JSX.Element {
-  const [text, setText] = React.useState('');
+  const [text, setText] = React.useState(initialText);
   const parsed = parsePastedHorses(text);
   return (
     <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open}>
-      <DialogTitle>Paste a list of horses</DialogTitle>
+      <DialogTitle>{fromPhoto ? 'Check what was read from the photo' : 'Paste a list of horses'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
+          {fromPhoto ? (
+            <Alert severity="warning">
+              Handwriting is often misread. Compare every line with the sheet, fix any mistakes and delete lines that
+              are not horses. Nothing is saved until you save the bet.
+            </Alert>
+          ) : null}
           <Typography color="text.secondary" variant="body2">
             One horse per line with its race time first, as on a WhatsApp message. Anything in brackets becomes a
             note.

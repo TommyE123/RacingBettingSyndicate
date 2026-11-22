@@ -124,3 +124,23 @@ def test_upload_dir_setting(monkeypatch):
     assert Settings.from_env().upload_dir == "/srv/sheets"
     monkeypatch.delenv("RBS_UPLOAD_DIR")
     assert Settings.from_env().upload_dir == "/data/uploads"
+
+
+def test_ocr_settings(monkeypatch):
+    assert not Settings().ocr_enabled
+    monkeypatch.setenv("RBS_OCR_ENDPOINT", " https://rbs.cognitiveservices.azure.com/ ")
+    monkeypatch.setenv("RBS_OCR_KEY", " key ")
+    settings = Settings.from_env()
+    assert (settings.ocr_endpoint, settings.ocr_key) == (
+        "https://rbs.cognitiveservices.azure.com/",
+        "key",
+    )
+    assert settings.ocr_enabled
+    assert "ocr_key" not in repr(settings)
+    monkeypatch.setenv("RBS_OCR_KEY", "  ")
+    assert not Settings.from_env().ocr_enabled
+
+
+def test_ocr_endpoint_must_be_https():
+    with pytest.raises(ValueError, match="must start with https://"):
+        Settings(ocr_endpoint="http://rbs.cognitiveservices.azure.com")

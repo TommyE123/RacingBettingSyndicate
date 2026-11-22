@@ -114,6 +114,14 @@ export interface Sheet {
   created_at: string;
 }
 
+export interface SheetReader {
+  enabled: boolean;
+}
+
+export interface SheetRead {
+  lines: string[];
+}
+
 export interface AuditEntry {
   id: number;
   at: string;
