@@ -1,6 +1,8 @@
 # Newer pnpm fails `pnpm install` when a dependency has an unreviewed build script.
-# sharp and unrs-resolver ship prebuilt binaries as optional dependencies and the kit
-# builds and runs without their install scripts, so both are explicitly not allowed.
+# sharp, unrs-resolver and @parcel/watcher (pulled in by Jest's jest-haste-map) ship prebuilt
+# binaries as optional dependencies and the kit builds and runs without their install scripts,
+# so all three are explicitly not allowed.
 allowBuilds:
   sharp: false
   unrs-resolver: false
+  "@parcel/watcher": false
